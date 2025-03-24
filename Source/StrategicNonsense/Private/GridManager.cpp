@@ -72,7 +72,6 @@ void AGridManager::PlaceObstacles()
     ObstacleSizes.Add(BP_Tree1, FIntPoint(1, 1));
     ObstacleSizes.Add(BP_Tree2, FIntPoint(1, 1));
 
-    TSet<FIntPoint> OccupiedCells;
     float GroundHeightOffset = 50.0f;
 
     while (OccupiedCells.Num() < NumObstacles)
@@ -140,7 +139,55 @@ void AGridManager::PlaceObstacles()
     }
 }
 
-float AGridManager::GetCellSize() const
+bool AGridManager::TryPlaceUnitAtLocation(const FVector& ClickLocation, TSubclassOf<AUnitActor> UnitToPlace)
 {
-    return CellSize;
+    FIntPoint GridCoord = WorldToGrid(ClickLocation);
+    if (!IsCellValid(GridCoord) || OccupiedCells.Contains(GridCoord))
+        return false;
+
+    FVector SpawnLocation = GridToWorld(GridCoord);
+    FRotator Rotation = FRotator(0.f, 0.f, 90.f);
+
+    AUnitActor* NewUnit = GetWorld()->SpawnActor<AUnitActor>(UnitToPlace, SpawnLocation, Rotation);
+    if (!NewUnit)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to spawn unit at (%d, %d)"), GridCoord.X, GridCoord.Y);
+        return false;
+    }
+
+    // Mark the cell as used
+    OccupiedCells.Add(GridCoord);
+
+    // Scale the unit based on cell size
+    float PaddingFactor = NewUnit->IsA(ASniperUnit::StaticClass()) ? 0.1f : 0.15f;
+    float UnitScale = (CellSize / 100.f) * PaddingFactor;
+    NewUnit->SetActorScale3D(FVector(UnitScale));
+
+    // Folder for organisation
+    NewUnit->SetFolderPath(FName("Units"));
+
+    UE_LOG(LogTemp, Warning, TEXT("Spawned and scaled %s at (%d, %d)"), *NewUnit->GetName(), GridCoord.X, GridCoord.Y);
+    return true;
+}
+
+
+bool AGridManager::IsCellValid(const FIntPoint& Cell) const
+{
+    return Cell.X >= 0 && Cell.X < GridSizeX && Cell.Y >= 0 && Cell.Y < GridSizeY;
+}
+
+FIntPoint AGridManager::WorldToGrid(const FVector& Location) const
+{
+    int32 X = FMath::FloorToInt(Location.X / CellSize);
+    int32 Y = FMath::FloorToInt(Location.Y / CellSize);
+    return FIntPoint(X, Y);
+}
+
+FVector AGridManager::GridToWorld(const FIntPoint& Cell) const
+{
+    return FVector(
+        (Cell.X + 0.5f) * CellSize, // x
+        (Cell.Y + 0.5f) * CellSize, // y
+        50.0f  // z
+    );
 }

@@ -5,29 +5,41 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Team.h"
 #include "SniperUnit.h"
+#include "BattlePlayerController.h"
 
 ABattleGameMode::ABattleGameMode()
 {
-    UE_LOG(LogTemp, Warning, TEXT("ABattleGameMode constructor called"));
+    PlayerControllerClass = ABattlePlayerController::StaticClass();
 
     static ConstructorHelpers::FClassFinder<AActor> CellBP(TEXT("/Game/Blueprints/BP_GridCell"));
     static ConstructorHelpers::FClassFinder<AActor> Tree1BP(TEXT("/Game/Blueprints/BP_Tree1"));
     static ConstructorHelpers::FClassFinder<AActor> Tree2BP(TEXT("/Game/Blueprints/BP_Tree2"));
     static ConstructorHelpers::FClassFinder<AActor> MountainBP(TEXT("/Game/Blueprints/BP_Mountain"));
-    static ConstructorHelpers::FClassFinder<AGridManager> GridBP(TEXT("/Game/Blueprints/BP_GridManager"));
+    FString GridManagerPath = TEXT("/Game/Blueprints/BP_GridManager.BP_GridManager_C");
+    GridManagerClass = StaticLoadClass(AGridManager::StaticClass(), nullptr, *GridManagerPath);
+
+    if (!GridManagerClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("FAILED to load GridManagerClass from path: %s"), *GridManagerPath);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Successfully loaded GridManagerClass!"));
+    }
 
     if (CellBP.Succeeded()) CellBlueprint = CellBP.Class;
     if (Tree1BP.Succeeded()) BP_Tree1 = Tree1BP.Class;
     if (Tree2BP.Succeeded()) BP_Tree2 = Tree2BP.Class;
     if (MountainBP.Succeeded()) BP_Mountain = MountainBP.Class;
-    if (GridBP.Succeeded()) GridManagerClass = GridBP.Class;
+
 }
 
 void ABattleGameMode::BeginPlay()
 {
     Super::BeginPlay();
-    SpawnTopDownCamera();
+    //SpawnTopDownCamera();
     SpawnGridAndSetup();
+
 }
 
 void ABattleGameMode::SpawnTopDownCamera()
@@ -66,79 +78,66 @@ void ABattleGameMode::SetupTeams()
 }
 
 
-
 void ABattleGameMode::SpawnTeamUnits()
 {
-    if (!SpawnedGridManager) return;
-
-    float GroundHeightOffset = 50.0f;
-    int32 StartX = 2;
-    int32 StartY = 2;
+    if (AllTeams.IsEmpty())
+    {
+        UE_LOG(LogTemp, Error, TEXT("No teams to place units for!"));
+        return;
+    }
 
     for (UTeam* Team : AllTeams)
     {
         if (!Team) continue;
 
-        FName Colour = Team->GetTeamColour();
-        UE_LOG(LogTemp, Warning, TEXT("Team colour: %s"), *Colour.ToString());
-
-        FVector SniperLocation((StartX + 0.5f) * 100.f, (StartY + 0.5f) * 100.f, GroundHeightOffset);
-        FVector BrawlerLocation((StartX + 1.5f) * 100.f, (StartY + 0.5f) * 100.f, GroundHeightOffset);
-        float CellSize = SpawnedGridManager->GetCellSize();
-        FRotator rotation = FRotator(0.f, 0.f, 90.f);
-        
         TSubclassOf<AUnitActor> SniperClass = Team->GetSniperBlueprint();
-        if (!SniperClass)
-        {
-            UE_LOG(LogTemp, Error, TEXT("SniperBlueprint is null for team %s"), *Colour.ToString());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Spawning Sniper for team %s..."), *Colour.ToString());
-            AActor* Sniper = GetWorld()->SpawnActor<AActor>(SniperClass, SniperLocation, FRotator::ZeroRotator);
-            if (Sniper)
-            {
-                Sniper->SetActorRotation(rotation);
-                
-                float PaddingFactor = 0.1f;
-                float UnitScale = (CellSize / 100.f) * PaddingFactor;
-                Sniper->SetActorScale3D(FVector(UnitScale));
-
-
-                Sniper->SetFolderPath(FName("Units"));
-                UE_LOG(LogTemp, Warning, TEXT("Sniper spawned and rotated for team %s!"), *Colour.ToString());
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("FAILED to spawn Sniper for team %s!"), *Colour.ToString());
-            }
-        }
-
         TSubclassOf<AUnitActor> BrawlerClass = Team->GetBrawlerBlueprint();
-        if (!BrawlerClass)
+
+        if (SniperClass)
         {
-            UE_LOG(LogTemp, Error, TEXT("BrawlerBlueprint is null for team %s"), *Colour.ToString());
+            UnitsToPlace.Add(SniperClass);
+            UE_LOG(LogTemp, Warning, TEXT("Sniper added to placement queue for team %s"), *Team->GetTeamColour().ToString());
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("Spawning Brawler for team %s..."), *Colour.ToString());
-            AActor* Brawler = GetWorld()->SpawnActor<AActor>(BrawlerClass, BrawlerLocation, FRotator::ZeroRotator);
-            if (Brawler)
-            {
-                Brawler->SetActorRotation(rotation);
-                float PaddingFactor = 0.15f;
-                float UnitScale = (CellSize / 100.f) * PaddingFactor;
-                Brawler->SetActorScale3D(FVector(UnitScale));
-                Brawler->SetFolderPath(FName("Units"));
-                UE_LOG(LogTemp, Warning, TEXT("Brawler spawned and rotated for team %s!"), *Colour.ToString());
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("FAILED to spawn Brawler for team %s!"), *Colour.ToString());
-            }
+            UE_LOG(LogTemp, Error, TEXT("Sniper blueprint missing for team %s"), *Team->GetTeamColour().ToString());
         }
 
-        StartX += 3;
+        if (BrawlerClass)
+        {
+            UnitsToPlace.Add(BrawlerClass);
+            UE_LOG(LogTemp, Warning, TEXT("Brawler added to placement queue for team %s"), *Team->GetTeamColour().ToString());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Brawler blueprint missing for team %s"), *Team->GetTeamColour().ToString());
+        }
     }
+
+    CurrentPhase = EGamePhase::Placement;
 }
 
+
+
+void ABattleGameMode::OnPlayerClickedGrid(const FVector& ClickLocation)
+{
+    if (CurrentPhase != EGamePhase::Placement || UnitsToPlace.IsEmpty())
+        return;
+
+    AGridManager* GridManager = Cast<AGridManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridManager::StaticClass()));
+    if (!GridManager) return;
+
+    TSubclassOf<AUnitActor> UnitClass = UnitsToPlace[0];
+    bool bPlaced = GridManager->TryPlaceUnitAtLocation(ClickLocation, UnitClass);
+
+    if (bPlaced)
+    {
+        UnitsToPlace.RemoveAt(0);
+
+        if (UnitsToPlace.IsEmpty())
+        {
+            CurrentPhase = EGamePhase::PlayerTurn;
+            UE_LOG(LogTemp, Warning, TEXT("All units placed! Game begins."));
+        }
+    }
+}

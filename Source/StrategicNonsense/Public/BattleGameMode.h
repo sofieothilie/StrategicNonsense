@@ -5,6 +5,15 @@
 #include "Team.h"
 #include "BattleGameMode.generated.h"
 
+UENUM(BlueprintType)
+enum class EGamePhase : uint8
+{
+    Placement,
+    PlayerTurn,
+    AITurn,
+    GameOver
+};
+
 class AGridManager;
 
 UCLASS()
@@ -15,6 +24,11 @@ class STRATEGICNONSENSE_API ABattleGameMode : public AGameModeBase
 public:
     ABattleGameMode();
     virtual void BeginPlay() override;
+    EGamePhase CurrentPhase = EGamePhase::Placement;
+    UPROPERTY(EditAnywhere)
+    TArray<TSubclassOf<class AUnitActor>> UnitsToPlace;
+
+    void OnPlayerClickedGrid(const FVector& ClickLocation);
 
 private:
     void SpawnTopDownCamera();
