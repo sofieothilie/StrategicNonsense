@@ -1,0 +1,146 @@
+#include "GridManager.h"
+#include "SniperUnit.h"
+#include "Engine/World.h"
+#include "GameFramework/Actor.h"
+#include "Containers/Array.h"
+#include "DrawDebugHelpers.h"
+
+AGridManager::AGridManager()
+{
+    PrimaryActorTick.bCanEverTick = false;
+}
+
+void AGridManager::BeginPlay()
+{
+    Super::BeginPlay();
+}
+void AGridManager::GenerateGrid()
+{
+    if (!CellBlueprint)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CellBlueprint is null"));
+        return;
+    }
+
+    float GroundHeightOffset = 0.0f;
+
+    for (int32 X = 0; X < GridSizeX; ++X)
+    {
+        for (int32 Y = 0; Y < GridSizeY; ++Y)
+        {
+            FVector Location = FVector(
+                (X + 0.5f) * CellSize,
+                (Y + 0.5f) * CellSize,
+                GroundHeightOffset
+            );
+
+            AActor* NewCell = GetWorld()->SpawnActor<AActor>(CellBlueprint, Location, FRotator::ZeroRotator);
+
+            if (NewCell)
+            {
+                NewCell->SetFolderPath(FName("Grid"));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed to spawn cell at X=%d Y=%d"), X, Y);
+            }
+        }
+    }
+}
+
+void AGridManager::SetBlueprints(TSubclassOf<AActor> InCell, TSubclassOf<AActor> InTree1, TSubclassOf<AActor> InTree2, TSubclassOf<AActor> InMountain)
+{
+    CellBlueprint = InCell;
+    BP_Tree1 = InTree1;
+    BP_Tree2 = InTree2;
+    BP_Mountain = InMountain;
+}
+
+
+
+void AGridManager::PlaceObstacles()
+{
+    if (!BP_Mountain && !BP_Tree1 && !BP_Tree2) return;
+
+    int32 TotalCells = GridSizeX * GridSizeY;
+    int32 NumObstacles = FMath::RoundToInt(TotalCells * (ObstaclePercentage / 100.0f));
+
+    TArray<TSubclassOf<AActor>> ObstacleTypes = { BP_Mountain, BP_Tree1, BP_Tree2 };
+
+    TMap<TSubclassOf<AActor>, FIntPoint> ObstacleSizes;
+    ObstacleSizes.Add(BP_Mountain, FIntPoint(6, 9));
+    ObstacleSizes.Add(BP_Tree1, FIntPoint(1, 1));
+    ObstacleSizes.Add(BP_Tree2, FIntPoint(1, 1));
+
+    TSet<FIntPoint> OccupiedCells;
+    float GroundHeightOffset = 50.0f;
+
+    while (OccupiedCells.Num() < NumObstacles)
+    {
+        TSubclassOf<AActor> ChosenObstacle = ObstacleTypes[FMath::RandRange(0, ObstacleTypes.Num() - 1)];
+        FIntPoint ObstacleSize = ObstacleSizes[ChosenObstacle];
+
+        int32 X = FMath::RandRange(0, GridSizeX - ObstacleSize.X - 1);
+        int32 Y = FMath::RandRange(0, GridSizeY - ObstacleSize.Y - 1);
+
+        bool CanPlace = true;
+        TArray<FIntPoint> CellsToOccupy;
+
+        for (int32 i = 0; i < ObstacleSize.X; ++i)
+        {
+            for (int32 j = 0; j < ObstacleSize.Y; ++j)
+            {
+                FIntPoint TestCell(X + i, Y + j);
+                if (OccupiedCells.Contains(TestCell))
+                {
+                    CanPlace = false;
+                    break;
+                }
+                CellsToOccupy.Add(TestCell);
+            }
+            if (!CanPlace) break;
+        }
+
+        if (!CanPlace) continue;
+
+        FVector SpawnLocation;
+
+        if (ObstacleSize == FIntPoint(1, 1))
+        {
+            SpawnLocation = FVector(
+                (X + 0.5f) * CellSize,
+                (Y + 0.5f) * CellSize,
+                GroundHeightOffset
+            );
+        }
+        else
+        {
+            SpawnLocation = FVector(
+                (X + ObstacleSize.X / 2.0f) * CellSize,
+                (Y + ObstacleSize.Y / 2.0f) * CellSize,
+                GroundHeightOffset
+            );
+        }
+
+        FRotator SpawnRotation = FRotator(0, 0, 90);
+        AActor* SpawnedObstacle = GetWorld()->SpawnActor<AActor>(ChosenObstacle, SpawnLocation, SpawnRotation);
+
+        if (SpawnedObstacle)
+        {
+            SpawnedObstacle->SetFolderPath(FName("Obstacle"));
+
+            for (const FIntPoint& Cell : CellsToOccupy)
+            {
+                OccupiedCells.Add(Cell);
+            }
+
+            UE_LOG(LogTemp, Warning, TEXT("Spawned obstacle at Grid (%d, %d) -> World (%f, %f)"),
+                X, Y, SpawnLocation.X, SpawnLocation.Y);
+        }
+    }
+}
+
+float AGridManager::GetCellSize() const
+{
+    return CellSize;
+}
