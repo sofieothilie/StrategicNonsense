@@ -3,9 +3,10 @@
 #include "SniperUnit.h"
 #include "BrawlerUnit.h"
 
-void UTeam::Initialise(FName InTeamColour)
+void UTeam::Initialise(FName InTeamColour, bool bIsPlayerControlled)
 {
     TeamColour = InTeamColour;
+    bPlayerControlled = bIsPlayerControlled;
 
     FString SniperPath = FString::Printf(TEXT("/Game/Blueprints/BP_Sniper_%s.BP_Sniper_%s_C"), *TeamColour.ToString(), *TeamColour.ToString());
     FString BrawlerPath = FString::Printf(TEXT("/Game/Blueprints/BP_Brawler_%s.BP_Brawler_%s_C"), *TeamColour.ToString(), *TeamColour.ToString());
@@ -37,4 +38,9 @@ TSubclassOf<AUnitActor> UTeam::GetSniperBlueprint() const
 TSubclassOf<AUnitActor> UTeam::GetBrawlerBlueprint() const
 {
     return BrawlerBlueprint;
+}
+
+bool UTeam::IsPlayerControlled() const 
+{ 
+    return bPlayerControlled; 
 }

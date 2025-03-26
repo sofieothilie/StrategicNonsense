@@ -27,6 +27,8 @@ public:
 
     bool TryPlaceUnitAtLocation(const FVector& ClickLocation, TSubclassOf<class AUnitActor> UnitToPlace);
 
+    UFUNCTION(BlueprintCallable)
+    bool GetRandomValidPlacementLocation(FVector& OutLocation);
 
 
 protected:

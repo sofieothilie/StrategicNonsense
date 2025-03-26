@@ -191,3 +191,29 @@ FVector AGridManager::GridToWorld(const FIntPoint& Cell) const
         50.0f  // z
     );
 }
+
+
+bool AGridManager::GetRandomValidPlacementLocation(FVector& OutLocation)
+{
+    TArray<FIntPoint> FreeCells;
+
+    for (int32 X = 0; X < GridSizeX; ++X)
+    {
+        for (int32 Y = 0; Y < GridSizeY; ++Y)
+        {
+            FIntPoint Cell(X, Y);
+            if (!OccupiedCells.Contains(Cell))
+            {
+                FreeCells.Add(Cell);
+            }
+        }
+    }
+
+    if (FreeCells.IsEmpty()) return false;
+
+    int32 Index = FMath::RandRange(0, FreeCells.Num() - 1);
+    FIntPoint Chosen = FreeCells[Index];
+    OutLocation = GridToWorld(Chosen);
+    return true;
+}
+

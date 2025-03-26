@@ -6,6 +6,11 @@
 #include "Team.h"
 #include "SniperUnit.h"
 #include "BattlePlayerController.h"
+#include "Misc/OutputDeviceNull.h"
+#include "Blueprint/UserWidget.h"
+#include "StartMessageWidget.h"
+#include "UnitSelectionWidget.h"
+
 
 ABattleGameMode::ABattleGameMode()
 {
@@ -37,9 +42,12 @@ ABattleGameMode::ABattleGameMode()
 void ABattleGameMode::BeginPlay()
 {
     Super::BeginPlay();
-    //SpawnTopDownCamera();
+    SpawnTopDownCamera();
     SpawnGridAndSetup();
 
+    DecideStartingPlayer();
+    SetupTeams();
+    SpawnTeamUnits();
 }
 
 void ABattleGameMode::SpawnTopDownCamera()
@@ -60,84 +68,246 @@ void ABattleGameMode::SpawnGridAndSetup()
     SpawnedGridManager->SetBlueprints(CellBlueprint, BP_Tree1, BP_Tree2, BP_Mountain);
     SpawnedGridManager->GenerateGrid();
     SpawnedGridManager->PlaceObstacles();
+}
 
-    SetupTeams();
-    SpawnTeamUnits();
+
+void ABattleGameMode::DecideStartingPlayer()
+{
+    bPlayerStarts = FMath::RandBool();
+    FText StartText = FText::FromString(bPlayerStarts ? TEXT("Player Starts") : TEXT("AI Starts"));
+
+    FString WidgetPath = TEXT("/Game/WBP_StartMessage.WBP_StartMessage_C");
+    TSubclassOf<UStartMessageWidget> WidgetClass = Cast<UClass>(StaticLoadClass(UStartMessageWidget::StaticClass(), nullptr, *WidgetPath));
+    if (!WidgetClass) return;
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (!PC) return;
+
+    UStartMessageWidget* Widget = CreateWidget<UStartMessageWidget>(PC, WidgetClass);
+    if (!Widget) return;
+
+    Widget->SetMessageText(StartText);
+    Widget->AddToViewport();
 }
 
 void ABattleGameMode::SetupTeams()
 {
-    TArray<FName> SelectedColours = { "Blue", "Red", "Violet", "Brown", "Green"};
-    for (const FName& Colour : SelectedColours)
+    TArray<FName> AvailableColours = { "Blue", "Red", "Violet", "Brown", "Green" };
+
+    for (int32 i = AvailableColours.Num() - 1; i > 0; --i)
     {
-        UTeam* Team = NewObject<UTeam>(this);
-        Team->Initialise(Colour);
-        AllTeams.Add(Team);
+        int32 j = FMath::RandRange(0, i);
+        AvailableColours.Swap(i, j);
     }
 
-}
+    FName Colour1 = AvailableColours[0];
+    FName Colour2 = AvailableColours[1];
 
+    Team1 = NewObject<UTeam>(this);
+    Team1->Initialise(Colour1, true);
+
+    Team2 = NewObject<UTeam>(this);
+    Team2->Initialise(Colour2, false);
+
+    AllTeams.Add(Team1);
+    AllTeams.Add(Team2);
+
+    UE_LOG(LogTemp, Warning, TEXT("Selected Teams: %s for player and %s for AI"), *Colour1.ToString(), *Colour2.ToString());
+}
 
 void ABattleGameMode::SpawnTeamUnits()
 {
-    if (AllTeams.IsEmpty())
-    {
-        UE_LOG(LogTemp, Error, TEXT("No teams to place units for!"));
-        return;
-    }
-
+    UnitsToPlace.Empty();
     for (UTeam* Team : AllTeams)
     {
         if (!Team) continue;
 
-        TSubclassOf<AUnitActor> SniperClass = Team->GetSniperBlueprint();
-        TSubclassOf<AUnitActor> BrawlerClass = Team->GetBrawlerBlueprint();
+        if (TSubclassOf<AUnitActor> Sniper = Team->GetSniperBlueprint())
+        {
+            FUnitPlacementEntry Entry;
+            Entry.UnitClass = Team->GetSniperBlueprint();
+            Entry.OwningTeam = Team;
+            UnitsToPlace.Add(Entry);
 
-        if (SniperClass)
-        {
-            UnitsToPlace.Add(SniperClass);
-            UE_LOG(LogTemp, Warning, TEXT("Sniper added to placement queue for team %s"), *Team->GetTeamColour().ToString());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Sniper blueprint missing for team %s"), *Team->GetTeamColour().ToString());
         }
 
-        if (BrawlerClass)
+        if (TSubclassOf<AUnitActor> Brawler = Team->GetBrawlerBlueprint())
         {
-            UnitsToPlace.Add(BrawlerClass);
-            UE_LOG(LogTemp, Warning, TEXT("Brawler added to placement queue for team %s"), *Team->GetTeamColour().ToString());
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Brawler blueprint missing for team %s"), *Team->GetTeamColour().ToString());
+            FUnitPlacementEntry Entry;
+			Entry.UnitClass = Team->GetBrawlerBlueprint();
+            Entry.OwningTeam = Team;
+            UnitsToPlace.Add(Entry);
         }
     }
 
     CurrentPhase = EGamePhase::Placement;
+    CurrentPlacementTeamIndex = bPlayerStarts ? 0 : 1;
+    PromptNextUnitSelection();
+}
+
+
+void ABattleGameMode::PromptNextUnitSelection()
+{
+    if (UnitsToPlace.IsEmpty())
+    {
+        CurrentPhase = EGamePhase::PlayerTurn;
+        UE_LOG(LogTemp, Log, TEXT("All units placed. Game begins."));
+        return;
+    }
+
+    // Alternate index
+    TeamPlacingNext = (CurrentPlacementTeamIndex == 0) ? Team1 : Team2;
+
+    // Determine what units are available for this team
+    TArray<TSubclassOf<AUnitActor>> Available;
+    for (const FUnitPlacementEntry& Entry : UnitsToPlace)
+    {
+        if (Entry.OwningTeam == TeamPlacingNext)
+        {
+            Available.Add(Entry.UnitClass);
+        }
+    }
+
+    if (Available.Num() == 0)
+    {
+        CurrentPlacementTeamIndex = 1 - CurrentPlacementTeamIndex;
+        PromptNextUnitSelection();
+        return;
+    }
+
+    if (TeamPlacingNext->IsPlayerControlled())
+    {
+        if (Available.Num() > 1 && !bUnitSelectionWidgetShown)
+        {
+            ShowUnitSelection(TeamPlacingNext);
+            bUnitSelectionWidgetShown = true;
+        }
+        else
+        {
+            HandleUnitChosen(Available[0]);
+        }
+    }
+
+    else
+    {
+        int32 Index = FMath::RandRange(0, Available.Num() - 1);
+        FTimerHandle AIDelayHandle;
+        GetWorld()->GetTimerManager().SetTimer(AIDelayHandle, [this, Available, Index]()
+            {
+                HandleUnitChosen(Available[Index]);
+            }, 1.0f, false); // 1.0 seconds delay
+
+    }
 }
 
 
 
+
+void ABattleGameMode::HandleUnitChosen(TSubclassOf<AUnitActor> ChosenUnit)
+{
+    UnitToPlaceNext = ChosenUnit;
+
+    UE_LOG(LogTemp, Log, TEXT("%s chose to place %s"),
+        *TeamPlacingNext->GetTeamColour().ToString(),
+        *GetNameSafe(ChosenUnit));
+
+    if (!TeamPlacingNext->IsPlayerControlled())
+    {
+        PlaceAIUnit();
+    }
+}
+
+
 void ABattleGameMode::OnPlayerClickedGrid(const FVector& ClickLocation)
 {
-    if (CurrentPhase != EGamePhase::Placement || UnitsToPlace.IsEmpty())
-        return;
+    if (CurrentPhase != EGamePhase::Placement || !UnitToPlaceNext) return;
 
     AGridManager* GridManager = Cast<AGridManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridManager::StaticClass()));
     if (!GridManager) return;
 
-    TSubclassOf<AUnitActor> UnitClass = UnitsToPlace[0];
-    bool bPlaced = GridManager->TryPlaceUnitAtLocation(ClickLocation, UnitClass);
-
-    if (bPlaced)
+    if (GridManager->TryPlaceUnitAtLocation(ClickLocation, UnitToPlaceNext))
     {
-        UnitsToPlace.RemoveAt(0);
-
-        if (UnitsToPlace.IsEmpty())
+        // Remove only one matching unit from the correct team
+        for (int32 i = 0; i < UnitsToPlace.Num(); ++i)
         {
-            CurrentPhase = EGamePhase::PlayerTurn;
-            UE_LOG(LogTemp, Warning, TEXT("All units placed! Game begins."));
+            if (UnitsToPlace[i].UnitClass == UnitToPlaceNext && UnitsToPlace[i].OwningTeam == TeamPlacingNext)
+            {
+                UnitsToPlace.RemoveAt(i);
+                break;
+            }
+        }
+
+        UnitToPlaceNext = nullptr;
+        CurrentPlacementTeamIndex = 1 - CurrentPlacementTeamIndex;
+        PromptNextUnitSelection();
+    }
+}
+
+void ABattleGameMode::ShowUnitSelection(UTeam* CurrentTeam)
+{
+    if (!CurrentTeam)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CurrentTeam is null!"));
+        return;
+    }
+
+    // Statically load widget class (only once)
+    if (!UnitSelectionWidgetClass)
+    {
+        FString WidgetPath = TEXT("/Game/Blueprints/WBP_UnitSelectionWidget.WBP_UnitSelectionWidget_C");
+        UnitSelectionWidgetClass = Cast<UClass>(StaticLoadClass(UUserWidget::StaticClass(), nullptr, *WidgetPath));
+
+        if (!UnitSelectionWidgetClass)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to statically load UnitSelectionWidgetClass from: %s"), *WidgetPath);
+            return;
+        }
+
+        UE_LOG(LogTemp, Warning, TEXT("Successfully loaded UnitSelectionWidgetClass"));
+    }
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("No player controller found!"));
+        return;
+    }
+
+    UUnitSelectionWidget* Widget = CreateWidget<UUnitSelectionWidget>(PC, UnitSelectionWidgetClass);
+    if (!Widget)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create UnitSelectionWidget"));
+        return;
+    }
+
+    Widget->InitialiseOptions(CurrentTeam->GetSniperBlueprint(), CurrentTeam->GetBrawlerBlueprint());
+    Widget->OnUnitChosen.AddDynamic(this, &ABattleGameMode::HandleUnitChosen);
+    Widget->AddToViewport();
+}
+
+
+void ABattleGameMode::PlaceAIUnit()
+{
+    if (!UnitToPlaceNext || !SpawnedGridManager) return;
+
+    FVector Location;
+    if (SpawnedGridManager->GetRandomValidPlacementLocation(Location))
+    {
+        if (SpawnedGridManager->TryPlaceUnitAtLocation(Location, UnitToPlaceNext))
+        {
+            // Remove the unit from queue
+            for (int32 i = 0; i < UnitsToPlace.Num(); ++i)
+            {
+                if (UnitsToPlace[i].UnitClass == UnitToPlaceNext && UnitsToPlace[i].OwningTeam == TeamPlacingNext)
+                {
+                    UnitsToPlace.RemoveAt(i);
+                    break;
+                }
+            }
+
+            UnitToPlaceNext = nullptr;
+            CurrentPlacementTeamIndex = 1 - CurrentPlacementTeamIndex;
+            PromptNextUnitSelection();
         }
     }
 }

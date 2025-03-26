@@ -9,8 +9,8 @@ public class StrategicNonsense : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(new string[] {
-			"Core", "CoreUObject", "Engine", "InputCore", "Paper2D"
-		});
+			"Core", "CoreUObject", "Engine", "InputCore", "Paper2D", "UMG"
+        });
 
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });
