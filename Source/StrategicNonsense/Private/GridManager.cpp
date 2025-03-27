@@ -235,3 +235,28 @@ bool AGridManager::GetRandomValidPlacementLocation(FVector& OutLocation)
     return true;
 }
 
+
+bool AGridManager::IsCellWalkable(const FIntPoint& Cell) const
+{
+    if (!IsCellValid(Cell))
+        return false;
+
+    return !OccupiedCells.Contains(Cell);
+}
+
+void AGridManager::SetUnitAtCell(const FIntPoint& Cell, AUnitActor* Unit)
+{
+    if (!IsCellValid(Cell))
+        return;
+
+    if (Unit)
+    {
+        OccupiedCells.Add(Cell);
+        UE_LOG(LogTemp, Warning, TEXT("Set unit at cell (%d, %d)"), Cell.X, Cell.Y);
+    }
+    else
+    {
+        OccupiedCells.Remove(Cell);
+        UE_LOG(LogTemp, Warning, TEXT("Cleared unit at cell (%d, %d)"), Cell.X, Cell.Y);
+    }
+}

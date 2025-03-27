@@ -24,6 +24,13 @@ public:
 
     UFUNCTION(BlueprintCallable)
     bool GetRandomValidPlacementLocation(FVector& OutLocation);
+    FIntPoint WorldToGrid(const FVector& Location) const;
+    FVector GridToWorld(const FIntPoint& Cell) const;
+
+
+    bool IsCellWalkable(const FIntPoint& Cell) const;
+    void SetUnitAtCell(const FIntPoint& Cell, class AUnitActor* Unit);
+
 
 
 protected:
@@ -43,8 +50,6 @@ private:
     float ObstaclePercentage = 10.0f;
 
     bool IsCellValid(const FIntPoint& Cell) const;
-    FIntPoint WorldToGrid(const FVector& Location) const;
-    FVector GridToWorld(const FIntPoint& Cell) const;
     TSet<FIntPoint> OccupiedCells;
 
     UPROPERTY()

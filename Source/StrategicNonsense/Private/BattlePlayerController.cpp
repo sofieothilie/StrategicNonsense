@@ -1,28 +1,108 @@
 #include "BattlePlayerController.h"
 #include "BattleGameMode.h"
+#include "GridManager.h"
+#include "UnitActor.h"
 #include "Kismet/GameplayStatics.h"
 
 void ABattlePlayerController::SetupInputComponent()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Inside playercontroller"));
-
     Super::SetupInputComponent();
     InputComponent->BindAction("LeftClick", IE_Pressed, this, &ABattlePlayerController::HandleLeftClick);
 }
 
 void ABattlePlayerController::HandleLeftClick()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Inside playercontroller, left click"));
-
     FHitResult Hit;
     GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
-    if (Hit.bBlockingHit)
+    if (!Hit.bBlockingHit)
+        return;
+
+    ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
+    if (!GameMode)
+        return;
+
+    // Branch based on game phase
+    switch (GameMode->GetCurrentPhase())
     {
-        ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
-        if (GameMode)
+    case EGamePhase::Placement:
+        UE_LOG(LogTemp, Warning, TEXT("Placement phase - forwarding to game mode"));
+        GameMode->OnPlayerClickedGrid(Hit.Location);
+        break;
+
+    case EGamePhase::PlayerTurn:
+        // Lazy-load GridManager if needed
+        if (!CachedGridManager)
         {
-            GameMode->OnPlayerClickedGrid(Hit.Location);
+            TArray<AActor*> FoundManagers;
+            UGameplayStatics::GetAllActorsOfClass(this, AGridManager::StaticClass(), FoundManagers);
+            if (FoundManagers.Num() > 0)
+            {
+                CachedGridManager = Cast<AGridManager>(FoundManagers[0]);
+            }
         }
+
+        // Check what was clicked
+        if (AUnitActor* ClickedUnit = Cast<AUnitActor>(Hit.GetActor()))
+        {
+            HandleUnitClicked(ClickedUnit);
+        }
+        else
+        {
+            HandleGridCellClicked(Hit.Location);
+        }
+        break;
+
+    default:
+        UE_LOG(LogTemp, Warning, TEXT("Click ignored - not in an interactive phase."));
+        break;
+    }
+}
+
+
+void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
+{
+    if (!ClickedUnit)
+        return;
+
+    // Log and select
+    SelectedUnit = ClickedUnit;
+    UE_LOG(LogTemp, Warning, TEXT("Selected Unit: %s"), *ClickedUnit->GetName());
+}
+
+void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
+{
+    if (!SelectedUnit || !CachedGridManager)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Missing unit or grid manager."));
+        return;
+    }
+
+    FIntPoint TargetCell = CachedGridManager->WorldToGrid(ClickLocation);
+    FIntPoint CurrentCell = SelectedUnit->GetGridPosition(); // You'll need this accessor
+
+    // Check if target is the same as current
+    if (TargetCell == CurrentCell)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Clicked on current unit position."));
+        return;
+    }
+
+    if (CachedGridManager->IsCellWalkable(TargetCell))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Snapping unit to cell (%d, %d)"), TargetCell.X, TargetCell.Y);
+
+        CachedGridManager->SetUnitAtCell(CurrentCell, nullptr);        // Free previous cell
+        CachedGridManager->SetUnitAtCell(TargetCell, SelectedUnit);    // Occupy new cell
+        SelectedUnit->SetGridPosition(TargetCell);                     // Update unit’s internal state
+        SelectedUnit->SetActorLocation(CachedGridManager->GridToWorld(TargetCell)); // Snap visually
+
+        // For now: basic movement marker
+        SelectedUnit->MarkAsMoved();
+        SelectedUnit = nullptr; // Deselect after moving
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Target cell is not walkable."));
     }
 }

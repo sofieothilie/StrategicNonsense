@@ -2,7 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GridManager.h"
+#include "UnitActor.h"
 #include "BattlePlayerController.generated.h"
+
+
+class AGridManager;
+class AUnitActor;
 
 UCLASS()
 class ABattlePlayerController : public APlayerController
@@ -14,4 +20,10 @@ protected:
 
 private:
     void HandleLeftClick();
+
+    AUnitActor* SelectedUnit = nullptr;
+    AGridManager* CachedGridManager = nullptr;
+
+    void HandleUnitClicked(AUnitActor* ClickedUnit);
+    void HandleGridCellClicked(FVector ClickLocation);
 };

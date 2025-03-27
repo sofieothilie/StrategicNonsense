@@ -51,6 +51,15 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Combat")
     bool IsDead() const;
+    FIntPoint GetGridPosition() const { return GridPosition; }
+    void SetGridPosition(FIntPoint NewPos) { GridPosition = NewPos; }
+
+    bool HasMovedThisTurn() const { return bHasMoved; }
+    void MarkAsMoved() { bHasMoved = true; }
+    void ResetMovement() { bHasMoved = false; }
+
+    virtual int32 GetMovementRange() const { return 0; } // Default: immobile
+
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual", meta = (AllowPrivateAccess = "true"))
@@ -73,4 +82,7 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
     int32 Health;
+
+    FIntPoint GridPosition;
+    bool bHasMoved = false;
 };

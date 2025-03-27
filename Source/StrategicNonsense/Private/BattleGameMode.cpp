@@ -92,3 +92,4 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
 {
     CurrentPhase = NewPhase;
 }
+
