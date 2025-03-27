@@ -15,28 +15,6 @@
 ABattleGameMode::ABattleGameMode()
 {
     PlayerControllerClass = ABattlePlayerController::StaticClass();
-
-    static ConstructorHelpers::FClassFinder<AActor> CellBP(TEXT("/Game/Blueprints/BP_GridCell"));
-    static ConstructorHelpers::FClassFinder<AActor> Tree1BP(TEXT("/Game/Blueprints/BP_Tree1"));
-    static ConstructorHelpers::FClassFinder<AActor> Tree2BP(TEXT("/Game/Blueprints/BP_Tree2"));
-    static ConstructorHelpers::FClassFinder<AActor> MountainBP(TEXT("/Game/Blueprints/BP_Mountain"));
-    FString GridManagerPath = TEXT("/Game/Blueprints/BP_GridManager.BP_GridManager_C");
-    GridManagerClass = StaticLoadClass(AGridManager::StaticClass(), nullptr, *GridManagerPath);
-
-    if (!GridManagerClass)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FAILED to load GridManagerClass from path: %s"), *GridManagerPath);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Successfully loaded GridManagerClass!"));
-    }
-
-    if (CellBP.Succeeded()) CellBlueprint = CellBP.Class;
-    if (Tree1BP.Succeeded()) BP_Tree1 = Tree1BP.Class;
-    if (Tree2BP.Succeeded()) BP_Tree2 = Tree2BP.Class;
-    if (MountainBP.Succeeded()) BP_Mountain = MountainBP.Class;
-
 }
 
 void ABattleGameMode::BeginPlay()
@@ -62,32 +40,30 @@ void ABattleGameMode::SpawnGridAndSetup()
     FVector Location(0.f, 0.f, 0.f);
     FRotator Rotation(0.f, 0.f, 0.f);
 
-    SpawnedGridManager = GetWorld()->SpawnActor<AGridManager>(GridManagerClass, Location, Rotation);
+    SpawnedGridManager = GetWorld()->SpawnActor<AGridManager>(Location, Rotation);
     if (!SpawnedGridManager) return;
 
-    SpawnedGridManager->SetBlueprints(CellBlueprint, BP_Tree1, BP_Tree2, BP_Mountain);
     SpawnedGridManager->GenerateGrid();
     SpawnedGridManager->PlaceObstacles();
 }
-
 
 void ABattleGameMode::DecideStartingPlayer()
 {
     bPlayerStarts = FMath::RandBool();
     FText StartText = FText::FromString(bPlayerStarts ? TEXT("Player Starts") : TEXT("AI Starts"));
 
-    FString WidgetPath = TEXT("/Game/WBP_StartMessage.WBP_StartMessage_C");
-    TSubclassOf<UStartMessageWidget> WidgetClass = Cast<UClass>(StaticLoadClass(UStartMessageWidget::StaticClass(), nullptr, *WidgetPath));
-    if (!WidgetClass) return;
+    //FString WidgetPath = TEXT("/Game/WBP_StartMessage.WBP_StartMessage_C");
+    //TSubclassOf<UStartMessageWidget> WidgetClass = Cast<UClass>(StaticLoadClass(UStartMessageWidget::StaticClass(), nullptr, *WidgetPath));
+    //if (!WidgetClass) return;
 
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (!PC) return;
+    //APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    //if (!PC) return;
 
-    UStartMessageWidget* Widget = CreateWidget<UStartMessageWidget>(PC, WidgetClass);
-    if (!Widget) return;
+    //UStartMessageWidget* Widget = CreateWidget<UStartMessageWidget>(PC, WidgetClass);
+    //if (!Widget) return;
 
-    Widget->SetMessageText(StartText);
-    Widget->AddToViewport();
+    //Widget->SetMessageText(StartText);
+    //Widget->AddToViewport();
 }
 
 void ABattleGameMode::SetupTeams()

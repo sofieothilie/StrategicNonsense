@@ -8,6 +8,7 @@
 AGridManager::AGridManager()
 {
     PrimaryActorTick.bCanEverTick = false;
+    SetBlueprints();
 }
 
 void AGridManager::BeginPlay()
@@ -48,12 +49,29 @@ void AGridManager::GenerateGrid()
     }
 }
 
-void AGridManager::SetBlueprints(TSubclassOf<AActor> InCell, TSubclassOf<AActor> InTree1, TSubclassOf<AActor> InTree2, TSubclassOf<AActor> InMountain)
+void AGridManager::SetBlueprints()
 {
-    CellBlueprint = InCell;
-    BP_Tree1 = InTree1;
-    BP_Tree2 = InTree2;
-    BP_Mountain = InMountain;
+    static ConstructorHelpers::FClassFinder<AActor> CellBP(TEXT("/Game/Blueprints/BP_GridCell"));
+    static ConstructorHelpers::FClassFinder<AActor> Tree1BP(TEXT("/Game/Blueprints/BP_Tree1"));
+    static ConstructorHelpers::FClassFinder<AActor> Tree2BP(TEXT("/Game/Blueprints/BP_Tree2"));
+    static ConstructorHelpers::FClassFinder<AActor> MountainBP(TEXT("/Game/Blueprints/BP_Mountain"));
+    FString GridManagerPath = TEXT("/Game/Blueprints/BP_GridManager.BP_GridManager_C");
+    GridManagerClass = StaticLoadClass(AGridManager::StaticClass(), nullptr, *GridManagerPath);
+
+    if (!GridManagerClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("FAILED to load GridManagerClass from path: %s"), *GridManagerPath);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Successfully loaded GridManagerClass!"));
+    }
+
+    if (CellBP.Succeeded()) CellBlueprint = CellBP.Class;
+    if (Tree1BP.Succeeded()) BP_Tree1 = Tree1BP.Class;
+    if (Tree2BP.Succeeded()) BP_Tree2 = Tree2BP.Class;
+    if (MountainBP.Succeeded()) BP_Mountain = MountainBP.Class;
+
 }
 
 
