@@ -22,9 +22,14 @@ public:
 
     bool IsPlayerControlled() const;
 
-
     FName GetTeamColour() const;
 
+    bool HasTeamFinishedTurn() const;
+
+    void AddUnit(AUnitActor* Unit);
+    const TArray<AUnitActor*>& GetControlledUnits() const;
+
+    void ResetUnitsMovement();
 
 
 private:
@@ -42,4 +47,8 @@ private:
 
     UPROPERTY()
     TArray<TSubclassOf<AUnitActor>> UnitsLeftToPlace;
+
+    UPROPERTY()
+    TArray<AUnitActor*> ControlledUnits;
+
 };

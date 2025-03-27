@@ -154,8 +154,11 @@ void UUnitPlacementManager::HandlePlayerClickedGrid(const FVector& ClickLocation
 {
     if (!UnitToPlaceNext || !GridManager) return;
 
-    if (GridManager->TryPlaceUnitAtLocation(ClickLocation, UnitToPlaceNext))
+    FIntPoint GridCoord = GridManager->WorldToGrid(ClickLocation);
+    AUnitActor* NewUnit = GridManager->SpawnAndPlaceUnit(GridCoord, UnitToPlaceNext);
+    if (NewUnit)
     {
+        TeamPlacingNext->AddUnit(NewUnit);
         RemoveUnitFromQueue(UnitToPlaceNext, TeamPlacingNext);
         UnitToPlaceNext = nullptr;
         CurrentPlacementTeamIndex = 1 - CurrentPlacementTeamIndex;
@@ -170,8 +173,12 @@ void UUnitPlacementManager::PlaceAIUnit()
     FVector Location;
     if (GridManager->GetRandomValidPlacementLocation(Location))
     {
-        if (GridManager->TryPlaceUnitAtLocation(Location, UnitToPlaceNext))
+        FIntPoint GridCoord = GridManager->WorldToGrid(Location);
+        AUnitActor* NewUnit = GridManager->SpawnAndPlaceUnit(GridCoord, UnitToPlaceNext);
+        if (NewUnit)
         {
+            TeamPlacingNext->AddUnit(NewUnit);
+
             RemoveUnitFromQueue(UnitToPlaceNext, TeamPlacingNext);
             UnitToPlaceNext = nullptr;
             CurrentPlacementTeamIndex = 1 - CurrentPlacementTeamIndex;

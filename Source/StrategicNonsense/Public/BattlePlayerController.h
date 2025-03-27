@@ -9,6 +9,7 @@
 
 class AGridManager;
 class AUnitActor;
+class UTeam;
 
 UCLASS()
 class ABattlePlayerController : public APlayerController

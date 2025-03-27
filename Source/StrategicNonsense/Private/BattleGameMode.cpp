@@ -91,5 +91,37 @@ void ABattleGameMode::OnPlayerClickedGrid(const FVector& ClickLocation)
 void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
 {
     CurrentPhase = NewPhase;
+
+    switch (NewPhase)
+    {
+    case EGamePhase::PlayerTurn:
+    {
+        UTeam* PlayerTeam = GetPlayerTeam();
+        if (PlayerTeam)
+        {
+            PlayerTeam->ResetUnitsMovement();
+            UE_LOG(LogTemp, Warning, TEXT("Player units reset for new turn."));
+        }
+        break;
+    }
+    case EGamePhase::AITurn:
+    {
+        UTeam* AITeam = GetPlayerTeam() == Team1 ? Team2 : Team1;
+        if (AITeam)
+        {
+            AITeam->ResetUnitsMovement();
+            UE_LOG(LogTemp, Warning, TEXT("AI units reset for new turn."));
+        }
+        break;
+    }
+    default:
+        break;
+    }
 }
 
+
+
+UTeam* ABattleGameMode::GetPlayerTeam() const
+{ 
+    return Team1->IsPlayerControlled() ? Team1 : Team2;
+}

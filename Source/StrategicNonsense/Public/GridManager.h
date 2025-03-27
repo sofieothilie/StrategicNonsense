@@ -33,7 +33,7 @@ public:
 
     TSet<FIntPoint> FindReachableCellsBFS(FIntPoint StartCell, int32 MaxRange) const;
 
-
+    AUnitActor* SpawnAndPlaceUnit(const FIntPoint& GridCoord, TSubclassOf<AUnitActor> UnitClass);
 
 
 protected:

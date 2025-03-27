@@ -304,3 +304,31 @@ TSet<FIntPoint> AGridManager::FindReachableCellsBFS(FIntPoint StartCell, int32 M
     Visited.Remove(StartCell); // Optional: don't count standing cell
     return Visited;
 }
+
+AUnitActor* AGridManager::SpawnAndPlaceUnit(const FIntPoint& GridCoord, TSubclassOf<AUnitActor> UnitClass)
+{
+    if (!IsCellValid(GridCoord) || OccupiedCells.Contains(GridCoord))
+        return nullptr;
+
+    FVector SpawnLocation = GridToWorld(GridCoord);
+    FRotator Rotation = FRotator(0.f, 0.f, 90.f);
+
+    AUnitActor* NewUnit = GetWorld()->SpawnActor<AUnitActor>(UnitClass, SpawnLocation, Rotation);
+    if (!NewUnit)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to spawn unit at (%d, %d)"), GridCoord.X, GridCoord.Y);
+        return nullptr;
+    }
+
+    OccupiedCells.Add(GridCoord);
+    NewUnit->SetGridPosition(GridCoord);
+
+    float PaddingFactor = NewUnit->IsA(ASniperUnit::StaticClass()) ? 0.1f : 0.15f;
+    float UnitScale = (CellSize / 100.f) * PaddingFactor;
+    NewUnit->SetActorScale3D(FVector(UnitScale));
+
+    NewUnit->SetFolderPath(FName("Units"));
+
+    UE_LOG(LogTemp, Warning, TEXT("Spawned and placed %s at (%d, %d)"), *NewUnit->GetName(), GridCoord.X, GridCoord.Y);
+    return NewUnit;
+}

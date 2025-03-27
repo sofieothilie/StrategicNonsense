@@ -53,3 +53,40 @@ TArray<TSubclassOf<AUnitActor>>& UTeam::GetUnplacedUnits()
     return UnitsLeftToPlace;
 }
 
+
+bool UTeam::HasTeamFinishedTurn() const
+{
+    for (const AUnitActor* Unit : ControlledUnits)
+    {
+        if (Unit && !Unit->HasMovedThisTurn())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void UTeam::AddUnit(AUnitActor* Unit)
+{
+    if (Unit)
+    {
+        ControlledUnits.Add(Unit);
+    }
+}
+
+const TArray<AUnitActor*>& UTeam::GetControlledUnits() const
+{
+    return ControlledUnits;
+}
+
+
+void UTeam::ResetUnitsMovement()
+{
+    for (AUnitActor* Unit : ControlledUnits)
+    {
+        if (Unit)
+        {
+            Unit->ResetMovement();
+        }
+    }
+}

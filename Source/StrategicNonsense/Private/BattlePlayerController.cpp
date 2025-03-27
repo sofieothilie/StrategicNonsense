@@ -1,6 +1,7 @@
 #include "BattlePlayerController.h"
 #include "BattleGameMode.h"
 #include "GridManager.h"
+#include "Team.h"
 #include "UnitActor.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -114,5 +115,18 @@ void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
     SelectedUnit->SetGridPosition(TargetCell);
     SelectedUnit->SetActorLocation(CachedGridManager->GridToWorld(TargetCell));
     SelectedUnit->MarkAsMoved();
+
+    // Check if player turn is over
+    ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
+    if (GameMode && GameMode->DoesPlayerStart())
+    {
+        UTeam* PlayerTeam = GameMode->GetPlayerTeam();
+        if (PlayerTeam && PlayerTeam->HasTeamFinishedTurn())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Player has finished their turn."));
+            GameMode->SetGamePhase(EGamePhase::AITurn);
+        }
+    }
+
     SelectedUnit = nullptr;
 }
