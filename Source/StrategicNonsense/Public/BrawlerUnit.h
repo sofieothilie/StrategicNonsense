@@ -11,4 +11,7 @@ class STRATEGICNONSENSE_API ABrawlerUnit : public AUnitActor
 
 public:
     ABrawlerUnit();
+
+    virtual int32 GetMovementRange() const override { return 6; }
+
 };

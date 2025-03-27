@@ -31,6 +31,9 @@ public:
     bool IsCellWalkable(const FIntPoint& Cell) const;
     void SetUnitAtCell(const FIntPoint& Cell, class AUnitActor* Unit);
 
+    TSet<FIntPoint> FindReachableCellsBFS(FIntPoint StartCell, int32 MaxRange) const;
+
+
 
 
 protected:

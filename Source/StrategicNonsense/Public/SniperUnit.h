@@ -11,4 +11,7 @@ class STRATEGICNONSENSE_API ASniperUnit : public AUnitActor
 
 public:
     ASniperUnit();
+
+    virtual int32 GetMovementRange() const override { return 3; }
+
 };

@@ -175,6 +175,7 @@ bool AGridManager::TryPlaceUnitAtLocation(const FVector& ClickLocation, TSubclas
 
     // Mark the cell as used
     OccupiedCells.Add(GridCoord);
+    NewUnit->SetGridPosition(GridCoord);
 
     // Scale the unit based on cell size
     float PaddingFactor = NewUnit->IsA(ASniperUnit::StaticClass()) ? 0.1f : 0.15f;
@@ -259,4 +260,47 @@ void AGridManager::SetUnitAtCell(const FIntPoint& Cell, AUnitActor* Unit)
         OccupiedCells.Remove(Cell);
         UE_LOG(LogTemp, Warning, TEXT("Cleared unit at cell (%d, %d)"), Cell.X, Cell.Y);
     }
+}
+
+TSet<FIntPoint> AGridManager::FindReachableCellsBFS(FIntPoint StartCell, int32 MaxRange) const
+{
+    TSet<FIntPoint> Visited;
+    TQueue<TPair<FIntPoint, int32>> Frontier;
+
+    Visited.Add(StartCell);
+    Frontier.Enqueue(TPair<FIntPoint, int32>(StartCell, 0));
+
+    const TArray<FIntPoint> Directions = {
+        FIntPoint(1, 0),
+        FIntPoint(-1, 0),
+        FIntPoint(0, 1),
+        FIntPoint(0, -1)
+    };
+
+    while (!Frontier.IsEmpty())
+    {
+        TPair<FIntPoint, int32> Current;
+        Frontier.Dequeue(Current);
+
+        FIntPoint Cell = Current.Key;
+        int32 Distance = Current.Value;
+
+        if (Distance >= MaxRange)
+            continue;
+
+        for (const FIntPoint& Dir : Directions)
+        {
+            FIntPoint Neighbor = Cell + Dir;
+
+            if (!IsCellValid(Neighbor)) continue;
+            if (OccupiedCells.Contains(Neighbor)) continue;
+            if (Visited.Contains(Neighbor)) continue;
+
+            Visited.Add(Neighbor);
+            Frontier.Enqueue(TPair<FIntPoint, int32>(Neighbor, Distance + 1));
+        }
+    }
+
+    Visited.Remove(StartCell); // Optional: don't count standing cell
+    return Visited;
 }

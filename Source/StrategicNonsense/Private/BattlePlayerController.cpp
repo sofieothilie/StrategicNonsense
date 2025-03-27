@@ -31,7 +31,6 @@ void ABattlePlayerController::HandleLeftClick()
         break;
 
     case EGamePhase::PlayerTurn:
-        // Lazy-load GridManager if needed
         if (!CachedGridManager)
         {
             TArray<AActor*> FoundManagers;
@@ -78,31 +77,42 @@ void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
         return;
     }
 
-    FIntPoint TargetCell = CachedGridManager->WorldToGrid(ClickLocation);
-    FIntPoint CurrentCell = SelectedUnit->GetGridPosition(); // You'll need this accessor
+    if (SelectedUnit->HasMovedThisTurn())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Unit has already moved this turn."));
+        return;
+    }
 
-    // Check if target is the same as current
+    FIntPoint TargetCell = CachedGridManager->WorldToGrid(ClickLocation);
+    FIntPoint CurrentCell = SelectedUnit->GetGridPosition();
+
     if (TargetCell == CurrentCell)
     {
         UE_LOG(LogTemp, Warning, TEXT("Clicked on current unit position."));
         return;
     }
 
-    if (CachedGridManager->IsCellWalkable(TargetCell))
+    int32 MaxRange = SelectedUnit->GetMovementRange();
+    TSet<FIntPoint> ReachableCells = CachedGridManager->FindReachableCellsBFS(CurrentCell, MaxRange);
+
+    if (!ReachableCells.Contains(TargetCell))
     {
-        UE_LOG(LogTemp, Warning, TEXT("Snapping unit to cell (%d, %d)"), TargetCell.X, TargetCell.Y);
-
-        CachedGridManager->SetUnitAtCell(CurrentCell, nullptr);        // Free previous cell
-        CachedGridManager->SetUnitAtCell(TargetCell, SelectedUnit);    // Occupy new cell
-        SelectedUnit->SetGridPosition(TargetCell);                     // Update unit’s internal state
-        SelectedUnit->SetActorLocation(CachedGridManager->GridToWorld(TargetCell)); // Snap visually
-
-        // For now: basic movement marker
-        SelectedUnit->MarkAsMoved();
-        SelectedUnit = nullptr; // Deselect after moving
+        UE_LOG(LogTemp, Warning, TEXT("Cell (%d, %d) is outside movement range."), TargetCell.X, TargetCell.Y);
+        return;
     }
-    else
+
+    if (!CachedGridManager->IsCellWalkable(TargetCell))
     {
         UE_LOG(LogTemp, Warning, TEXT("Target cell is not walkable."));
+        return;
     }
+
+    // Move
+    UE_LOG(LogTemp, Warning, TEXT("Snapping unit to cell (%d, %d)"), TargetCell.X, TargetCell.Y);
+    CachedGridManager->SetUnitAtCell(CurrentCell, nullptr);
+    CachedGridManager->SetUnitAtCell(TargetCell, SelectedUnit);
+    SelectedUnit->SetGridPosition(TargetCell);
+    SelectedUnit->SetActorLocation(CachedGridManager->GridToWorld(TargetCell));
+    SelectedUnit->MarkAsMoved();
+    SelectedUnit = nullptr;
 }
