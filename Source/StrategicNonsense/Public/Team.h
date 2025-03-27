@@ -12,17 +12,27 @@ class STRATEGICNONSENSE_API UTeam : public UObject
     GENERATED_BODY()
 
 public:
-    void Initialise(FName InTeamColour, bool bIsPlayerControlled);
+    void Initialise(FName Colour, bool bIsPlayer);
 
-    FName GetTeamColour() const;
     TSubclassOf<AUnitActor> GetSniperBlueprint() const;
     TSubclassOf<AUnitActor> GetBrawlerBlueprint() const;
 
+    TArray<TSubclassOf<AUnitActor>>& GetUnplacedUnits();
+
+
     bool IsPlayerControlled() const;
+
+
+    FName GetTeamColour() const;
+
+
 
 private:
     UPROPERTY()
     FName TeamColour;
+
+    UPROPERTY()
+    bool bPlayerControlled = false;
 
     UPROPERTY()
     TSubclassOf<AUnitActor> SniperBlueprint;
@@ -31,5 +41,5 @@ private:
     TSubclassOf<AUnitActor> BrawlerBlueprint;
 
     UPROPERTY()
-    bool bPlayerControlled = false;
+    TArray<TSubclassOf<AUnitActor>> UnitsLeftToPlace;
 };

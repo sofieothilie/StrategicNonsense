@@ -9,6 +9,7 @@ class AUnitActor;
 class UTeam;
 class UUnitSelectionWidget;
 class UStartMessageWidget;
+class UUnitPlacementManager;
 
 UENUM(BlueprintType)
 enum class EGamePhase : uint8
@@ -44,19 +45,14 @@ public:
     bool DoesPlayerStart() const { return bPlayerStarts; }
 
     void OnPlayerClickedGrid(const FVector& ClickLocation);
+    void SetGamePhase(EGamePhase NewPhase);
+
 
 private:
     void SpawnTopDownCamera();
     void SpawnGridAndSetup();
     void SetupTeams();
-    void SpawnTeamUnits();
     void DecideStartingPlayer();
-    void ShowUnitSelection(UTeam* CurrentTeam);
-    void PromptNextUnitSelection();
-    void PlaceAIUnit();
-
-    UFUNCTION()
-    void HandleUnitChosen(TSubclassOf<AUnitActor> ChosenUnit);
 
 private:
     EGamePhase CurrentPhase = EGamePhase::Placement;
@@ -73,38 +69,9 @@ private:
     UPROPERTY()
     AGridManager* SpawnedGridManager;
 
-    UPROPERTY()
-    TArray<FUnitPlacementEntry> UnitsToPlace;
-
-    UPROPERTY()
-    TSubclassOf<AUnitActor> UnitToPlaceNext;
-
-    UPROPERTY()
-    UTeam* TeamPlacingNext;
-
-    int32 CurrentPlacementTeamIndex = 0;
-
     bool bPlayerStarts = false;
-    bool bUnitSelectionWidgetShown = false;
 
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UStartMessageWidget> StartMessageWidgetClass;
+    UPROPERTY()
+    UUnitPlacementManager* UnitPlacementManager;
 
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UUnitSelectionWidget> UnitSelectionWidgetClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-    TSubclassOf<AGridManager> GridManagerClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-    TSubclassOf<AActor> CellBlueprint;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-    TSubclassOf<AActor> BP_Tree1;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-    TSubclassOf<AActor> BP_Tree2;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-    TSubclassOf<AActor> BP_Mountain;
 };
