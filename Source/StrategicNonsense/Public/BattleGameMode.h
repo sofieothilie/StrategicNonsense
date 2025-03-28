@@ -48,6 +48,7 @@ public:
     void SetGamePhase(EGamePhase NewPhase);
     EGamePhase GetCurrentPhase() const { return CurrentPhase; }
     UTeam* GetPlayerTeam() const;
+    UTeam* GetAITeam() const;
 
     void HandleAITurn();
 

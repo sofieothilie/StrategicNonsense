@@ -130,9 +130,14 @@ UTeam* ABattleGameMode::GetPlayerTeam() const
     return Team1->IsPlayerControlled() ? Team1 : Team2;
 }
 
+UTeam* ABattleGameMode::GetAITeam() const
+{
+    return Team1->IsPlayerControlled() ? Team2 : Team1;
+}
+
 void ABattleGameMode::HandleAITurn()
 {
-    UTeam* AITeam = GetPlayerTeam() == Team1 ? Team2 : Team1;
+    UTeam* AITeam = GetAITeam();
     if (!AITeam || !SpawnedGridManager)
     {
         UE_LOG(LogTemp, Error, TEXT("Cannot run AI turn - missing team or grid."));
@@ -146,26 +151,24 @@ void ABattleGameMode::HandleAITurn()
         if (!Unit || Unit->HasMovedThisTurn())
             continue;
 
-        FIntPoint Current = Unit->GetGridPosition();
-        int32 Range = Unit->GetMovementRange();
-        TSet<FIntPoint> Reachable = SpawnedGridManager->FindReachableCellsBFS(Current, Range);
+                FIntPoint Current = Unit->GetGridPosition();
+                int32 Range = Unit->GetMovementRange();
+                TSet<FIntPoint> Reachable = SpawnedGridManager->FindReachableCellsBFS(Current, Range);
 
-        if (Reachable.Num() == 0)
-            continue;
+                if (Reachable.Num() == 0)
+                    return;
 
-        // Randomly pick one reachable cell
-        TArray<FIntPoint> ReachableArray = Reachable.Array();
-        int32 RandIndex = FMath::RandRange(0, ReachableArray.Num() - 1);
-        FIntPoint Destination = ReachableArray[RandIndex];
+                TArray<FIntPoint> ReachableArray = Reachable.Array();
+                int32 RandIndex = FMath::RandRange(0, ReachableArray.Num() - 1);
+                FIntPoint Destination = ReachableArray[RandIndex];
 
-        // Perform movement
-        SpawnedGridManager->SetUnitAtCell(Current, nullptr);
-        SpawnedGridManager->SetUnitAtCell(Destination, Unit);
-        Unit->SetGridPosition(Destination);
-        Unit->SetActorLocation(SpawnedGridManager->GridToWorld(Destination));
-        Unit->MarkAsMoved();
+                SpawnedGridManager->SetUnitAtCell(Current, nullptr);
+                SpawnedGridManager->SetUnitAtCell(Destination, Unit);
+                Unit->SetGridPosition(Destination);
+                Unit->SetActorLocation(SpawnedGridManager->GridToWorld(Destination));
+                Unit->MarkAsMoved();
 
-        UE_LOG(LogTemp, Warning, TEXT("AI moved %s to (%d, %d)"), *Unit->GetName(), Destination.X, Destination.Y);
+                UE_LOG(LogTemp, Warning, TEXT("AI moved %s to (%d, %d)"), *Unit->GetName(), Destination.X, Destination.Y);
     }
 
     // End AI turn and go back to player
