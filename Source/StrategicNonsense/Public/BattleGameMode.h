@@ -49,6 +49,9 @@ public:
     EGamePhase GetCurrentPhase() const { return CurrentPhase; }
     UTeam* GetPlayerTeam() const;
 
+    void HandleAITurn();
+
+
 
 private:
     void SpawnTopDownCamera();

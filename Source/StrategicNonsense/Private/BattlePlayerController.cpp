@@ -118,7 +118,7 @@ void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
 
     // Check if player turn is over
     ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
-    if (GameMode && GameMode->DoesPlayerStart())
+    if (GameMode)
     {
         UTeam* PlayerTeam = GameMode->GetPlayerTeam();
         if (PlayerTeam && PlayerTeam->HasTeamFinishedTurn())

@@ -110,6 +110,10 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
         if (AITeam)
         {
             AITeam->ResetUnitsMovement();
+
+            FTimerHandle AITimer;
+            GetWorld()->GetTimerManager().SetTimer(AITimer, this, &ABattleGameMode::HandleAITurn, 0.6f, false);
+
             UE_LOG(LogTemp, Warning, TEXT("AI units reset for new turn."));
         }
         break;
@@ -124,4 +128,46 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
 UTeam* ABattleGameMode::GetPlayerTeam() const
 { 
     return Team1->IsPlayerControlled() ? Team1 : Team2;
+}
+
+void ABattleGameMode::HandleAITurn()
+{
+    UTeam* AITeam = GetPlayerTeam() == Team1 ? Team2 : Team1;
+    if (!AITeam || !SpawnedGridManager)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Cannot run AI turn - missing team or grid."));
+        return;
+    }
+
+    TArray<AUnitActor*> Units = AITeam->GetControlledUnits();
+
+    for (AUnitActor* Unit : Units)
+    {
+        if (!Unit || Unit->HasMovedThisTurn())
+            continue;
+
+        FIntPoint Current = Unit->GetGridPosition();
+        int32 Range = Unit->GetMovementRange();
+        TSet<FIntPoint> Reachable = SpawnedGridManager->FindReachableCellsBFS(Current, Range);
+
+        if (Reachable.Num() == 0)
+            continue;
+
+        // Randomly pick one reachable cell
+        TArray<FIntPoint> ReachableArray = Reachable.Array();
+        int32 RandIndex = FMath::RandRange(0, ReachableArray.Num() - 1);
+        FIntPoint Destination = ReachableArray[RandIndex];
+
+        // Perform movement
+        SpawnedGridManager->SetUnitAtCell(Current, nullptr);
+        SpawnedGridManager->SetUnitAtCell(Destination, Unit);
+        Unit->SetGridPosition(Destination);
+        Unit->SetActorLocation(SpawnedGridManager->GridToWorld(Destination));
+        Unit->MarkAsMoved();
+
+        UE_LOG(LogTemp, Warning, TEXT("AI moved %s to (%d, %d)"), *Unit->GetName(), Destination.X, Destination.Y);
+    }
+
+    // End AI turn and go back to player
+    SetGamePhase(EGamePhase::PlayerTurn);
 }

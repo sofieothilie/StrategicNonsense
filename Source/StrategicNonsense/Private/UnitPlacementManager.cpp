@@ -75,7 +75,7 @@ void UUnitPlacementManager::StartNextPlacementStep()
         // Check the other team
         if (TeamPlacingNext->GetUnplacedUnits().IsEmpty())
         {
-            GameMode->SetGamePhase(EGamePhase::PlayerTurn);
+            GameMode->SetGamePhase(GameMode->DoesPlayerStart() ? EGamePhase::PlayerTurn : EGamePhase::AITurn);
             UE_LOG(LogTemp, Log, TEXT("All units placed. Game begins."));
             return;
         }
