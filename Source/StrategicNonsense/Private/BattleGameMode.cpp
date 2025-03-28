@@ -140,13 +140,12 @@ UTeam* ABattleGameMode::GetAITeam() const
 {
     return Team1->IsPlayerControlled() ? Team2 : Team1;
 }
-
 void ABattleGameMode::HandleAITurn()
 {
     UTeam* AITeam = GetAITeam();
-    if (!AITeam || !SpawnedGridManager)
+    if (!AITeam || !SpawnedGridManager || !CombatManager)
     {
-        UE_LOG(LogTemp, Error, TEXT("Cannot run AI turn - missing team or grid."));
+        UE_LOG(LogTemp, Error, TEXT("Cannot run AI turn - missing team, grid, or combat manager."));
         return;
     }
 
@@ -157,26 +156,74 @@ void ABattleGameMode::HandleAITurn()
         if (!Unit || Unit->HasMovedThisTurn())
             continue;
 
-                FIntPoint Current = Unit->GetGridPosition();
-                int32 Range = Unit->GetMovementRange();
-                TSet<FIntPoint> Reachable = SpawnedGridManager->FindReachableCellsBFS(Current, Range);
+        // Random movement
+        FIntPoint Current = Unit->GetGridPosition();
+        int32 Range = Unit->GetMovementRange();
+        TSet<FIntPoint> Reachable = SpawnedGridManager->FindReachableCellsBFS(Current, Range);
 
-                if (Reachable.Num() == 0)
-                    return;
+        if (Reachable.Num() == 0)
+            continue;
 
-                TArray<FIntPoint> ReachableArray = Reachable.Array();
-                int32 RandIndex = FMath::RandRange(0, ReachableArray.Num() - 1);
-                FIntPoint Destination = ReachableArray[RandIndex];
+        TArray<FIntPoint> ReachableArray = Reachable.Array();
+        int32 RandIndex = FMath::RandRange(0, ReachableArray.Num() - 1);
+        FIntPoint Destination = ReachableArray[RandIndex];
 
-                SpawnedGridManager->SetUnitAtCell(Current, nullptr);
-                SpawnedGridManager->SetUnitAtCell(Destination, Unit);
-                Unit->SetGridPosition(Destination);
-                Unit->SetActorLocation(SpawnedGridManager->GridToWorld(Destination));
-                Unit->MarkAsMoved();
+        SpawnedGridManager->SetUnitAtCell(Current, nullptr);
+        SpawnedGridManager->SetUnitAtCell(Destination, Unit);
+        Unit->SetGridPosition(Destination);
+        Unit->SetActorLocation(SpawnedGridManager->GridToWorld(Destination));
+        Unit->MarkAsMoved();
 
-                UE_LOG(LogTemp, Warning, TEXT("AI moved %s to (%d, %d)"), *Unit->GetName(), Destination.X, Destination.Y);
+        UE_LOG(LogTemp, Warning, TEXT("AI moved %s to (%d, %d)"), *Unit->GetName(), Destination.X, Destination.Y);
+
+        // Try to attack after moving
+        TArray<AUnitActor*> EnemyUnits = GetPlayerTeam()->GetControlledUnits();
+        for (AUnitActor* Target : EnemyUnits)
+        {
+            if (!Target || Target->IsDead()) continue;
+
+            FIntPoint From = Unit->GetGridPosition();
+            FIntPoint To = Target->GetGridPosition();
+            int32 Distance = FMath::Abs(From.X - To.X) + FMath::Abs(From.Y - To.Y);
+
+            if (Distance <= Unit->GetAttackRange())
+            {
+                if (CombatManager->ExecuteAttack(Unit, Target))
+                {
+                    CheckGameEnd(); 
+                }
+
+                break; // Attack once per turn
+            }
+        }
     }
 
     // End AI turn and go back to player
     SetGamePhase(EGamePhase::PlayerTurn);
+}
+
+
+void ABattleGameMode::CheckGameEnd()
+{
+    if (!Team1 || !Team2 || CurrentPhase == EGamePhase::GameOver)
+        return;
+
+    const bool bTeam1Alive = Team1->HasLivingUnits();
+    const bool bTeam2Alive = Team2->HasLivingUnits();
+
+    if (!bTeam1Alive && !bTeam2Alive)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("It's a draw!"));
+        CurrentPhase = EGamePhase::GameOver;
+    }
+    else if (!bTeam1Alive)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("%s wins!"), *Team2->GetTeamColour().ToString());
+        CurrentPhase = EGamePhase::GameOver;
+    }
+    else if (!bTeam2Alive)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("%s wins!"), *Team1->GetTeamColour().ToString());
+        CurrentPhase = EGamePhase::GameOver;
+    }
 }

@@ -56,15 +56,16 @@ TArray<TSubclassOf<AUnitActor>>& UTeam::GetUnplacedUnits()
 
 bool UTeam::HasTeamFinishedTurn() const
 {
-    for (const AUnitActor* Unit : ControlledUnits)
+    for (AUnitActor* Unit : ControlledUnits)
     {
-        if (Unit && !Unit->HasMovedThisTurn())
+        if (Unit && !Unit->IsDead() && !Unit->HasMovedThisTurn())
         {
             return false;
         }
     }
     return true;
 }
+
 
 void UTeam::AddUnit(AUnitActor* Unit)
 {
@@ -95,4 +96,14 @@ void UTeam::ResetUnitsMovement()
 bool UTeam::OwnsUnit(const AUnitActor* Unit) const
 {
     return ControlledUnits.Contains(Unit);
+}
+
+bool UTeam::HasLivingUnits() const
+{
+    for (AUnitActor* Unit : ControlledUnits)
+    {
+        if (Unit && !Unit->IsDead())
+            return true;
+    }
+    return false;
 }

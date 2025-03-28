@@ -59,7 +59,7 @@ public:
     UPROPERTY()
     UCombatManager* CombatManager;
 
-
+    void CheckGameEnd();
 
 private:
     void SpawnTopDownCamera();

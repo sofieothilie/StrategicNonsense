@@ -80,6 +80,8 @@ void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
             {
                 SelectedUnit = nullptr;
 
+                GameMode->CheckGameEnd();
+
                 if (GameMode->GetPlayerTeam()->HasTeamFinishedTurn())
                 {
                     GameMode->SetGamePhase(EGamePhase::AITurn);

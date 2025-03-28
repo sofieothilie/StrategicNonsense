@@ -33,6 +33,7 @@ public:
 
     bool OwnsUnit(const AUnitActor* Unit) const;
 
+    bool HasLivingUnits() const;
 
 
 private:
