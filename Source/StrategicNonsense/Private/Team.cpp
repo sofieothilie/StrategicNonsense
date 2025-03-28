@@ -90,3 +90,9 @@ void UTeam::ResetUnitsMovement()
         }
     }
 }
+
+
+bool UTeam::OwnsUnit(const AUnitActor* Unit) const
+{
+    return ControlledUnits.Contains(Unit);
+}

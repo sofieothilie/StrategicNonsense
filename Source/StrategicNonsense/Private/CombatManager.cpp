@@ -43,9 +43,14 @@ void UCombatManager::HandleCounterattack(AUnitActor* Attacker, AUnitActor* Targe
     FIntPoint T = Target->GetGridPosition();
     int32 Distance = FMath::Abs(A.X - T.X) + FMath::Abs(A.Y - T.Y);
 
-    bool ShouldCounter =
-        Target->GetUnitType() == EGameUnitType::Sniper ||
-        (Target->GetUnitType() == EGameUnitType::Brawler && Distance == 1);
+    bool IsAttackerSniper = Attacker->GetUnitType() == EGameUnitType::Sniper;
+
+    bool ShouldCounter = IsAttackerSniper &&
+        (
+            Target->GetUnitType() == EGameUnitType::Sniper ||
+            (Target->GetUnitType() == EGameUnitType::Brawler && Distance == 1)
+            );
+
 
     if (!ShouldCounter) return;
 

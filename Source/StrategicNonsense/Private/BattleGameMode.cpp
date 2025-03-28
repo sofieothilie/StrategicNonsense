@@ -11,6 +11,8 @@
 #include "Blueprint/UserWidget.h"
 #include "StartMessageWidget.h"
 #include "UnitSelectionWidget.h"
+#include "CombatManager.h"
+
 
 
 ABattleGameMode::ABattleGameMode()
@@ -23,6 +25,10 @@ void ABattleGameMode::BeginPlay()
     Super::BeginPlay();
     SpawnTopDownCamera();
     SpawnGridAndSetup();
+
+    CombatManager = NewObject<UCombatManager>(this);
+    CombatManager->Initialise(SpawnedGridManager);
+
 
     DecideStartingPlayer();
     SetupTeams();

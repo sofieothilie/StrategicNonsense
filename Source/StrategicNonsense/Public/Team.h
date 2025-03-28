@@ -31,6 +31,9 @@ public:
 
     void ResetUnitsMovement();
 
+    bool OwnsUnit(const AUnitActor* Unit) const;
+
+
 
 private:
     UPROPERTY()

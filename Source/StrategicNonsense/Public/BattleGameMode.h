@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "CombatManager.h"
 #include "BattleGameMode.generated.h"
+
 
 class AGridManager;
 class AUnitActor;
@@ -10,6 +12,7 @@ class UTeam;
 class UUnitSelectionWidget;
 class UStartMessageWidget;
 class UUnitPlacementManager;
+class UCombatManager;
 
 UENUM(BlueprintType)
 enum class EGamePhase : uint8
@@ -51,6 +54,10 @@ public:
     UTeam* GetAITeam() const;
 
     void HandleAITurn();
+
+
+    UPROPERTY()
+    UCombatManager* CombatManager;
 
 
 

@@ -62,13 +62,41 @@ void ABattlePlayerController::HandleLeftClick()
 
 void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
 {
-    if (!ClickedUnit)
-        return;
+    if (!ClickedUnit) return;
 
-    // Log and select
-    SelectedUnit = ClickedUnit;
-    UE_LOG(LogTemp, Warning, TEXT("Selected Unit: %s"), *ClickedUnit->GetName());
+    ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
+    if (!GameMode) return;
+
+    // If we already selected a unit, try attacking
+    if (SelectedUnit && SelectedUnit != ClickedUnit)
+    {
+        if (GameMode->GetPlayerTeam()->OwnsUnit(SelectedUnit) &&
+            !GameMode->GetPlayerTeam()->OwnsUnit(ClickedUnit) &&
+            GameMode->CombatManager)
+        {
+            bool bSuccess = GameMode->CombatManager->ExecuteAttack(SelectedUnit, ClickedUnit);
+
+            if (bSuccess)
+            {
+                SelectedUnit = nullptr;
+
+                if (GameMode->GetPlayerTeam()->HasTeamFinishedTurn())
+                {
+                    GameMode->SetGamePhase(EGamePhase::AITurn);
+                }
+            }
+            return;
+        }
+    }
+
+    // Selecting a new friendly unit
+    if (GameMode->GetPlayerTeam()->OwnsUnit(ClickedUnit))
+    {
+        SelectedUnit = ClickedUnit;
+        UE_LOG(LogTemp, Warning, TEXT("Selected Unit: %s"), *ClickedUnit->GetName());
+    }
 }
+
 
 void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
 {
