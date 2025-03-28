@@ -60,6 +60,10 @@ public:
 
     virtual int32 GetMovementRange() const { return 0; } // Default: immobile
 
+    int32 GetAttackRange() const { return AttackRange; }
+    EGameUnitType GetUnitType() const { return UnitType; }
+
+
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual", meta = (AllowPrivateAccess = "true"))
