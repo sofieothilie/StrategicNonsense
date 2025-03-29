@@ -16,6 +16,9 @@ class ABattlePlayerController : public APlayerController
 {
     GENERATED_BODY()
 
+public:
+    virtual void BeginPlay() override;
+
 protected:
     virtual void SetupInputComponent() override;
 

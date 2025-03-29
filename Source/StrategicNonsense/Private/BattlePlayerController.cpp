@@ -5,6 +5,18 @@
 #include "UnitActor.h"
 #include "Kismet/GameplayStatics.h"
 
+void ABattlePlayerController::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // Show the mouse cursor
+    bShowMouseCursor = true;
+    bEnableClickEvents = true;
+    bEnableMouseOverEvents = true;
+    DefaultMouseCursor = EMouseCursor::Default;
+}
+
+
 void ABattlePlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
