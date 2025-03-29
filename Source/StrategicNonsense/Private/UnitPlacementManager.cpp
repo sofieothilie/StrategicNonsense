@@ -39,7 +39,7 @@ void UUnitPlacementManager::Initialise(ABattleGameMode* InGameMode, AGridManager
 
 void UUnitPlacementManager::ShowStartMessage()
 {
-    FString WidgetPath = TEXT("/Game/WBP_StartMessage.WBP_StartMessage_C");
+    FString WidgetPath = TEXT("/Game/Blueprints/WBP_StartMessage.WBP_StartMessage_C");
     TSubclassOf<UStartMessageWidget> StartWidgetClass = Cast<UClass>(StaticLoadClass(UUserWidget::StaticClass(), nullptr, *WidgetPath));
     if (!StartWidgetClass) return;
 

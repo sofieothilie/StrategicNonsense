@@ -6,7 +6,7 @@ ASniperUnit::ASniperUnit()
     UnitType = EGameUnitType::Sniper;
     MaxMovement = 3;
     AttackType = EAttackType::Ranged;
-    AttackRange = 10;
+    AttackRange = 40;
     Damage = { 4, 8 };
-    Health = 20;
+    Health = 1;
 }

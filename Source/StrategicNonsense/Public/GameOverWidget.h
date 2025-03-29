@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Button.h"
 #include "GameOverWidget.generated.h"
+
 
 UCLASS()
 class STRATEGICNONSENSE_API UGameOverWidget : public UUserWidget
@@ -12,4 +14,13 @@ class STRATEGICNONSENSE_API UGameOverWidget : public UUserWidget
 public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     void SetResultText(const FString& Result);
+
+    UPROPERTY(meta = (BindWidget))
+    class UButton* RestartButton;
+
+    virtual void NativeConstruct() override;
+
+    UFUNCTION()
+    void OnRestartClicked();
+
 };
