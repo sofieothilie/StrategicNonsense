@@ -11,13 +11,26 @@
 #include "Blueprint/UserWidget.h"
 #include "StartMessageWidget.h"
 #include "UnitSelectionWidget.h"
+#include "GameOverWidget.h"
 #include "CombatManager.h"
-
 
 
 ABattleGameMode::ABattleGameMode()
 {
     PlayerControllerClass = ABattlePlayerController::StaticClass();
+
+    FString WidgetPath = TEXT("/Game//Blueprints/WBP_GameOver.WBP_GameOver_C");
+    TSubclassOf<UGameOverWidget> GameOverWidgetClassLoaded = Cast<UClass>(StaticLoadClass(UUserWidget::StaticClass(), nullptr, *WidgetPath));
+
+    if (GameOverWidgetClassLoaded)
+    {
+        GameOverWidgetClass = GameOverWidgetClassLoaded;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to load GameOverWidget class!"));
+    }
+
 }
 
 void ABattleGameMode::BeginPlay()
@@ -140,6 +153,7 @@ UTeam* ABattleGameMode::GetAITeam() const
 {
     return Team1->IsPlayerControlled() ? Team2 : Team1;
 }
+
 void ABattleGameMode::HandleAITurn()
 {
     UTeam* AITeam = GetAITeam();
@@ -208,22 +222,52 @@ void ABattleGameMode::CheckGameEnd()
     if (!Team1 || !Team2 || CurrentPhase == EGamePhase::GameOver)
         return;
 
-    const bool bTeam1Alive = Team1->HasLivingUnits();
-    const bool bTeam2Alive = Team2->HasLivingUnits();
+    UTeam* PlayerTeam = GetPlayerTeam();
+    UTeam* AITeam = GetAITeam();
 
-    if (!bTeam1Alive && !bTeam2Alive)
+    const bool bPlayerAlive = PlayerTeam->HasLivingUnits();
+    const bool bAIAlive = AITeam->HasLivingUnits();
+
+    if (!bPlayerAlive && !bAIAlive)
     {
         UE_LOG(LogTemp, Warning, TEXT("It's a draw!"));
         CurrentPhase = EGamePhase::GameOver;
+        ShowGameOverWidget(TEXT("Draw!"));
     }
-    else if (!bTeam1Alive)
+    else if (!bPlayerAlive)
     {
-        UE_LOG(LogTemp, Warning, TEXT("%s wins!"), *Team2->GetTeamColour().ToString());
+        FString Winner = AITeam->GetTeamColour().ToString();
+        UE_LOG(LogTemp, Warning, TEXT("%s wins!"), *Winner);
         CurrentPhase = EGamePhase::GameOver;
+        ShowGameOverWidget(FString::Printf(TEXT("%s wins!"), *Winner));
     }
-    else if (!bTeam2Alive)
+    else if (!bAIAlive)
     {
-        UE_LOG(LogTemp, Warning, TEXT("%s wins!"), *Team1->GetTeamColour().ToString());
+        FString Winner = PlayerTeam->GetTeamColour().ToString();
+        UE_LOG(LogTemp, Warning, TEXT("%s wins!"), *Winner);
         CurrentPhase = EGamePhase::GameOver;
+        ShowGameOverWidget(FString::Printf(TEXT("%s wins!"), *Winner));
+    }
+}
+
+
+void ABattleGameMode::ShowGameOverWidget(const FString& ResultText)
+{
+    if (!GameOverWidgetClass) return;
+
+    GameOverWidget = CreateWidget<UUserWidget>(GetWorld(), GameOverWidgetClass);
+    if (!GameOverWidget) return;
+
+    GameOverWidget->AddToViewport();
+
+    if (UGameOverWidget* Casted = Cast<UGameOverWidget>(GameOverWidget))
+    {
+        Casted->SetResultText(ResultText);
+    }
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (PC)
+    {
+        PC->SetPause(true);
     }
 }

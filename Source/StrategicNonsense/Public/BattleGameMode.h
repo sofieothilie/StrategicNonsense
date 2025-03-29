@@ -13,6 +13,7 @@ class UUnitSelectionWidget;
 class UStartMessageWidget;
 class UUnitPlacementManager;
 class UCombatManager;
+class GameOverWidget;
 
 UENUM(BlueprintType)
 enum class EGamePhase : uint8
@@ -86,5 +87,13 @@ private:
 
     UPROPERTY()
     UUnitPlacementManager* UnitPlacementManager;
+
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<UUserWidget> GameOverWidgetClass;
+
+    UPROPERTY()
+    UUserWidget* GameOverWidget;
+
+    void ShowGameOverWidget(const FString& ResultText);
 
 };

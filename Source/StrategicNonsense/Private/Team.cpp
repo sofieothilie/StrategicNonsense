@@ -98,12 +98,14 @@ bool UTeam::OwnsUnit(const AUnitActor* Unit) const
     return ControlledUnits.Contains(Unit);
 }
 
+
 bool UTeam::HasLivingUnits() const
 {
     for (AUnitActor* Unit : ControlledUnits)
     {
-        if (Unit && !Unit->IsDead())
+        if (IsValid(Unit) && !Unit->IsDead())
             return true;
     }
     return false;
 }
+
