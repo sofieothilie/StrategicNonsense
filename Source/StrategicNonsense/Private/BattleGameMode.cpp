@@ -12,6 +12,7 @@
 #include "StartMessageWidget.h"
 #include "UnitSelectionWidget.h"
 #include "GameStatusWidget.h"
+#include "EndTurnWidget.h"
 #include "GameOverWidget.h"
 #include "CombatManager.h"
 
@@ -115,6 +116,8 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
     UTeam* PlayerTeam = GetPlayerTeam();
     UTeam* AITeam = (PlayerTeam == Team1) ? Team2 : Team1;
 
+    ABattlePlayerController* PlayerController = Cast<ABattlePlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+
     switch (NewPhase)
     {
     case EGamePhase::PlayerTurn:
@@ -122,6 +125,26 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
         {
             PlayerTeam->ResetUnitsForNewTurn();
             UE_LOG(LogTemp, Warning, TEXT("Player units reset for new turn."));
+        }
+
+        if (PlayerController)
+        {
+            // Load and show EndTurn widget
+            if (!PlayerController->EndTurnWidgetClass)
+            {
+                FString WidgetPath = TEXT("/Game/Blueprints/WBP_EndTurnWidget.WBP_EndTurnWidget_C");
+                TSubclassOf<UEndTurnWidget> LoadedClass = Cast<UClass>(StaticLoadClass(UUserWidget::StaticClass(), nullptr, *WidgetPath));
+                if (LoadedClass)
+                {
+                    PlayerController->EndTurnWidgetClass = LoadedClass;
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Error, TEXT("Failed to load EndTurnWidget class!"));
+                }
+            }
+
+            PlayerController->ShowEndTurnWidget();
         }
         break;
 
@@ -133,6 +156,11 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
 
             FTimerHandle AITimer;
             GetWorld()->GetTimerManager().SetTimer(AITimer, this, &ABattleGameMode::HandleAITurn, 0.6f, false);
+        }
+
+        if (PlayerController)
+        {
+            PlayerController->HideEndTurnWidget();
         }
         break;
 
@@ -146,6 +174,8 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
         GameStatusWidget->SetTurnText(TurnText);
     }
 }
+
+
 
 
 

@@ -15,6 +15,7 @@ class UUnitPlacementManager;
 class UCombatManager;
 class GameOverWidget;
 class UGameStatusWidget;
+class UEndTurnWidget;
 
 UENUM(BlueprintType)
 enum class EGamePhase : uint8
@@ -68,6 +69,10 @@ public:
 
     UFUNCTION()
     void UpdateGameStatusWidget();
+
+
+    UPROPERTY()
+    TSubclassOf<UEndTurnWidget> EndTurnWidgetClass;
 
 
 private:

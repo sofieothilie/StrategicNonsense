@@ -3,6 +3,8 @@
 #include "GridManager.h"
 #include "Team.h"
 #include "UnitActor.h"
+#include "EndTurnWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "GameStatusWidget.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -237,4 +239,52 @@ void ABattleGameMode::UpdateGameStatusWidget()
     UpdateTeam(Team2);
 }
 
+void ABattlePlayerController::HandleEndTurnPressed()
+{
+    ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
+    if (!GameMode) return;
 
+    UTeam* PlayerTeam = GameMode->GetPlayerTeam();
+    if (!PlayerTeam) return;
+
+    // Mark all units as done
+    for (AUnitActor* Unit : PlayerTeam->GetControlledUnits())
+    {
+        if (Unit && !Unit->IsDead())
+        {
+            Unit->MarkAsDone();
+        }
+    }
+
+    SelectedUnit = nullptr;
+
+    GameMode->UpdateGameStatusWidget();
+
+    UE_LOG(LogTemp, Warning, TEXT("Player clicked end turn — forcing transition to AI turn."));
+    GameMode->SetGamePhase(EGamePhase::AITurn);
+}
+
+
+void ABattlePlayerController::ShowEndTurnWidget()
+{
+    if (!EndTurnWidgetInstance && EndTurnWidgetClass)
+    {
+        EndTurnWidgetInstance = CreateWidget<UEndTurnWidget>(this, EndTurnWidgetClass);
+        if (EndTurnWidgetInstance)
+        {
+            EndTurnWidgetInstance->AddToViewport();
+        }
+    }
+    else if (EndTurnWidgetInstance)
+    {
+        EndTurnWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+    }
+}
+
+void ABattlePlayerController::HideEndTurnWidget()
+{
+    if (EndTurnWidgetInstance)
+    {
+        EndTurnWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+    }
+}

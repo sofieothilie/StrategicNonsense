@@ -10,6 +10,7 @@
 class AGridManager;
 class AUnitActor;
 class UTeam;
+class UEndTurnWidget;
 
 UCLASS()
 class ABattlePlayerController : public APlayerController
@@ -18,6 +19,21 @@ class ABattlePlayerController : public APlayerController
 
 public:
     virtual void BeginPlay() override;
+
+    UFUNCTION()
+    void HandleEndTurnPressed();
+
+    UFUNCTION()
+    void ShowEndTurnWidget();
+
+    UFUNCTION()
+    void HideEndTurnWidget();
+
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UEndTurnWidget> EndTurnWidgetClass;
+
+    UPROPERTY()
+    UEndTurnWidget* EndTurnWidgetInstance;
 
 protected:
     virtual void SetupInputComponent() override;
@@ -30,4 +46,5 @@ private:
 
     void HandleUnitClicked(AUnitActor* ClickedUnit);
     void HandleGridCellClicked(FVector ClickLocation);
+
 };

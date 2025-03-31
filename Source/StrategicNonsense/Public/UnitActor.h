@@ -70,6 +70,10 @@ public:
     void MarkAsAttacked() { bHasAttacked = true; }
     void ResetAttack() { bHasAttacked = false; }
 
+    bool IsActionComplete() const { return bHasMoved && bHasAttacked; }
+    void MarkAsDone() { bHasMoved = true; bHasAttacked = true; }
+
+
 
 
 protected:
