@@ -147,6 +147,9 @@ void AGridManager::PlaceObstacles()
 
         if (!CanPlace) continue;
 
+        if (WouldBlockConnectivity(CellsToOccupy)) continue;
+
+
         FVector SpawnLocation = FVector(
             (OriginX + ObstacleSize.X / 2.0f) * CellSize,
             (OriginY + ObstacleSize.Y / 2.0f) * CellSize,
@@ -345,4 +348,60 @@ AUnitActor* AGridManager::SpawnAndPlaceUnit(const FIntPoint& GridCoord, TSubclas
 
     UE_LOG(LogTemp, Warning, TEXT("Spawned and placed %s at (%d, %d)"), *NewUnit->GetName(), GridCoord.X, GridCoord.Y);
     return NewUnit;
+}
+
+bool AGridManager::WouldBlockConnectivity(const TArray<FIntPoint>& ProposedObstacle)
+{
+    TSet<FIntPoint> SimulatedOccupied = OccupiedCells;
+    for (const FIntPoint& Cell : ProposedObstacle)
+    {
+        SimulatedOccupied.Add(Cell);
+    }
+
+    // Find a valid start cell
+    FIntPoint Start(-1, -1);
+    for (int32 X = 0; X < GridSizeX && Start.X == -1; ++X)
+    {
+        for (int32 Y = 0; Y < GridSizeY; ++Y)
+        {
+            FIntPoint Cell(X, Y);
+            if (!SimulatedOccupied.Contains(Cell))
+            {
+                Start = Cell;
+                break;
+            }
+        }
+    }
+
+    if (Start.X == -1) return true; // No free cells left
+
+    // Run BFS
+    TSet<FIntPoint> Visited;
+    TQueue<FIntPoint> Queue;
+    Queue.Enqueue(Start);
+    Visited.Add(Start);
+
+    const TArray<FIntPoint> Directions = {
+        FIntPoint(1, 0), FIntPoint(-1, 0), FIntPoint(0, 1), FIntPoint(0, -1)
+    };
+
+    while (!Queue.IsEmpty())
+    {
+        FIntPoint Current;
+        Queue.Dequeue(Current);
+
+        for (const FIntPoint& Dir : Directions)
+        {
+            FIntPoint Neighbour = Current + Dir;
+            if (!IsCellValid(Neighbour)) continue;
+            if (SimulatedOccupied.Contains(Neighbour)) continue;
+            if (Visited.Contains(Neighbour)) continue;
+
+            Visited.Add(Neighbour);
+            Queue.Enqueue(Neighbour);
+        }
+    }
+
+    int32 TotalFreeCells = GridSizeX * GridSizeY - SimulatedOccupied.Num();
+    return Visited.Num() != TotalFreeCells; // true = connectivity broken
 }

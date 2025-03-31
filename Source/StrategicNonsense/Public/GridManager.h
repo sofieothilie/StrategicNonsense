@@ -70,4 +70,6 @@ private:
     UPROPERTY()
     TSubclassOf<AActor> BP_Mountain;
 
+    bool WouldBlockConnectivity(const TArray<FIntPoint>& ProposedObstacle);
+
 };
