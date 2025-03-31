@@ -6,7 +6,7 @@ ABrawlerUnit::ABrawlerUnit()
     UnitType = EGameUnitType::Brawler;
     MaxMovement = 6;
     AttackType = EAttackType::ShortRange;
-    AttackRange = 40;
+    AttackRange = 1;
     Damage = { 1, 6 };
-    Health = 1;
+    Health = 40;
 }

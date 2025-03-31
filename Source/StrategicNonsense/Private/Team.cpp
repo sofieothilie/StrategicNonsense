@@ -81,16 +81,18 @@ const TArray<AUnitActor*>& UTeam::GetControlledUnits() const
 }
 
 
-void UTeam::ResetUnitsMovement()
+void UTeam::ResetUnitsForNewTurn()
 {
     for (AUnitActor* Unit : ControlledUnits)
     {
         if (Unit)
         {
             Unit->ResetMovement();
+            Unit->ResetAttack();
         }
     }
 }
+
 
 
 bool UTeam::OwnsUnit(const AUnitActor* Unit) const

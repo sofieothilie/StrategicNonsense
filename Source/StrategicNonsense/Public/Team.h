@@ -29,7 +29,7 @@ public:
     void AddUnit(AUnitActor* Unit);
     const TArray<AUnitActor*>& GetControlledUnits() const;
 
-    void ResetUnitsMovement();
+    void ResetUnitsForNewTurn();
 
     bool OwnsUnit(const AUnitActor* Unit) const;
 

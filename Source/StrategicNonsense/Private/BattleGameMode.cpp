@@ -112,36 +112,41 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
 {
     CurrentPhase = NewPhase;
 
+    UTeam* PlayerTeam = GetPlayerTeam();
+    UTeam* AITeam = (PlayerTeam == Team1) ? Team2 : Team1;
+
     switch (NewPhase)
     {
     case EGamePhase::PlayerTurn:
-    {
-        UTeam* PlayerTeam = GetPlayerTeam();
         if (PlayerTeam)
         {
-            PlayerTeam->ResetUnitsMovement();
+            PlayerTeam->ResetUnitsForNewTurn();
             UE_LOG(LogTemp, Warning, TEXT("Player units reset for new turn."));
         }
         break;
-    }
+
     case EGamePhase::AITurn:
-    {
-        UTeam* AITeam = GetPlayerTeam() == Team1 ? Team2 : Team1;
         if (AITeam)
         {
-            AITeam->ResetUnitsMovement();
+            AITeam->ResetUnitsForNewTurn();
+            UE_LOG(LogTemp, Warning, TEXT("AI units reset for new turn."));
 
             FTimerHandle AITimer;
             GetWorld()->GetTimerManager().SetTimer(AITimer, this, &ABattleGameMode::HandleAITurn, 0.6f, false);
-
-            UE_LOG(LogTemp, Warning, TEXT("AI units reset for new turn."));
         }
         break;
-    }
+
     default:
         break;
     }
+
+    if (GameStatusWidget)
+    {
+        const FString TurnText = (NewPhase == EGamePhase::PlayerTurn) ? TEXT("Player Turn") : TEXT("AI Turn");
+        GameStatusWidget->SetTurnText(TurnText);
+    }
 }
+
 
 
 

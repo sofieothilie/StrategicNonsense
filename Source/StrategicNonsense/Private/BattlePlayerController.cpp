@@ -80,9 +80,23 @@ void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
     ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
     if (!GameMode) return;
 
+    // Selecting a new friendly unit
+    if (GameMode->GetPlayerTeam()->OwnsUnit(ClickedUnit))
+    {
+        SelectedUnit = ClickedUnit;
+        UE_LOG(LogTemp, Warning, TEXT("Selected Unit: %s"), *ClickedUnit->GetName());
+    }
+
     // If we already selected a unit, try attacking
     if (SelectedUnit && SelectedUnit != ClickedUnit)
     {
+        if (SelectedUnit->HasAttackedThisTurn())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Unit has already attacked this turn."));
+            return;
+        }
+
+
         if (GameMode->GetPlayerTeam()->OwnsUnit(SelectedUnit) &&
             !GameMode->GetPlayerTeam()->OwnsUnit(ClickedUnit) &&
             GameMode->CombatManager)
@@ -91,6 +105,7 @@ void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
 
             if (bSuccess)
             {
+                SelectedUnit->MarkAsAttacked();
                 SelectedUnit = nullptr;
 
                 GameMode->UpdateGameStatusWidget();
@@ -106,12 +121,7 @@ void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
         }
     }
 
-    // Selecting a new friendly unit
-    if (GameMode->GetPlayerTeam()->OwnsUnit(ClickedUnit))
-    {
-        SelectedUnit = ClickedUnit;
-        UE_LOG(LogTemp, Warning, TEXT("Selected Unit: %s"), *ClickedUnit->GetName());
-    }
+
 }
 
 

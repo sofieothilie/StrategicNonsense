@@ -18,6 +18,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     void SetUnitHealth(bool bIsTeam1, EGameUnitType UnitType, int32 CurrentHP, int32 MaxHP);
 
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void SetTurnText(const FString& TurnDescription);
+
+
 protected:
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* Team1Text;
@@ -36,5 +40,8 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* Team2BrawlerText;
+
+    UPROPERTY(meta = (BindWidget))
+    class UTextBlock* Turntext;
 };
 

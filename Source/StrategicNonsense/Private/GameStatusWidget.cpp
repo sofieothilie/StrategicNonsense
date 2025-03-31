@@ -38,3 +38,11 @@ void UGameStatusWidget::SetUnitHealth(bool bIsTeam1, EGameUnitType UnitType, int
             Team2BrawlerText->SetText(FText::FromString(Text));
     }
 }
+
+void UGameStatusWidget::SetTurnText(const FString& TurnDescription)
+{
+    if (Turntext)
+    {
+        Turntext->SetText(FText::FromString(TurnDescription));
+    }
+}

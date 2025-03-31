@@ -66,6 +66,11 @@ public:
     int32 GetHealth() const { return Health; }
     int32 GetMaxHealth() const { return (UnitType == EGameUnitType::Sniper) ? 20 : 40; }
 
+    bool HasAttackedThisTurn() const { return bHasAttacked; }
+    void MarkAsAttacked() { bHasAttacked = true; }
+    void ResetAttack() { bHasAttacked = false; }
+
+
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual", meta = (AllowPrivateAccess = "true"))
@@ -91,4 +96,6 @@ protected:
 
     FIntPoint GridPosition;
     bool bHasMoved = false;
+    bool bHasAttacked = false;
+
 };
