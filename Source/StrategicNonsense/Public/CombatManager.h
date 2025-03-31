@@ -4,8 +4,11 @@
 #include "UObject/NoExportTypes.h"
 #include "CombatManager.generated.h"
 
+
 class AUnitActor;
 class AGridManager;
+class ABattleGameMode;
+
 
 UCLASS()
 class STRATEGICNONSENSE_API UCombatManager : public UObject
@@ -15,6 +18,10 @@ class STRATEGICNONSENSE_API UCombatManager : public UObject
 public:
     void Initialise(AGridManager* Grid);
     bool ExecuteAttack(AUnitActor* Attacker, AUnitActor* Target);
+
+    UPROPERTY()
+    ABattleGameMode* GameMode;
+
 
 private:
     AGridManager* GridManager;

@@ -11,6 +11,7 @@
 #include "Blueprint/UserWidget.h"
 #include "StartMessageWidget.h"
 #include "UnitSelectionWidget.h"
+#include "GameStatusWidget.h"
 #include "GameOverWidget.h"
 #include "CombatManager.h"
 
@@ -269,5 +270,46 @@ void ABattleGameMode::ShowGameOverWidget(const FString& ResultText)
     if (PC)
     {
         PC->SetPause(true);
+    }
+}
+
+void ABattleGameMode::SpawnGameStatusWidget()
+{
+    FString WidgetPath = TEXT("/Game/Blueprints/WBP_GameStatus.WBP_GameStatus_C");
+    TSubclassOf<UGameStatusWidget> GameStatusWidgetClassLoaded =
+        Cast<UClass>(StaticLoadClass(UGameStatusWidget::StaticClass(), nullptr, *WidgetPath));
+
+
+    if (!GameStatusWidgetClassLoaded)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to load GameStatusWidget class!"));
+        return;
+    }
+
+    UGameStatusWidget* Widget = CreateWidget<UGameStatusWidget>(GetWorld(), GameStatusWidgetClassLoaded);
+    if (!Widget)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create GameStatusWidget!"));
+        return;
+    }
+
+    Widget->AddToViewport();
+    GameStatusWidget = Widget;
+
+    // Set initial status
+    if (Team1 && Team2)
+    {
+        Widget->SetTeamInfo(Team1->IsPlayerControlled(), Team1->GetTeamColour().ToString(), !Team1->IsPlayerControlled());
+        Widget->SetTeamInfo(!Team1->IsPlayerControlled(), Team2->GetTeamColour().ToString(), !Team2->IsPlayerControlled());
+
+        for (AUnitActor* Unit : Team1->GetControlledUnits())
+        {
+            Widget->SetUnitHealth(Team1->IsPlayerControlled(), Unit->GetUnitType(), Unit->GetHealth(), /* MaxHP */ Unit->GetHealth());
+        }
+
+        for (AUnitActor* Unit : Team2->GetControlledUnits())
+        {
+            Widget->SetUnitHealth(Team2->IsPlayerControlled(), Unit->GetUnitType(), Unit->GetHealth(), /* MaxHP */ Unit->GetHealth());
+        }
     }
 }

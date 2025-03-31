@@ -1,11 +1,12 @@
-// CombatSystem.cpp
 #include "CombatManager.h"
 #include "UnitActor.h"
+#include "BattleGameMode.h"
 #include "GridManager.h"
 
 void UCombatManager::Initialise(AGridManager* Grid)
 {
     GridManager = Grid;
+    GameMode = Cast<ABattleGameMode>(GetOuter());
 }
 
 bool UCombatManager::ExecuteAttack(AUnitActor* Attacker, AUnitActor* Target)
@@ -17,7 +18,9 @@ bool UCombatManager::ExecuteAttack(AUnitActor* Attacker, AUnitActor* Target)
         return false;
 
     Attacker->ApplyDamageTo(Target);
+    if (GameMode) GameMode->UpdateGameStatusWidget();
     RemoveUnitIfDead(Target);
+
 
     HandleCounterattack(Attacker, Target);
     RemoveUnitIfDead(Attacker);
@@ -59,6 +62,8 @@ void UCombatManager::HandleCounterattack(AUnitActor* Attacker, AUnitActor* Targe
 
     UE_LOG(LogTemp, Warning, TEXT("Counterattack! %s received %d damage."),
         *UEnum::GetValueAsString(Attacker->GetUnitType()), CounterDamage);
+    if (GameMode) GameMode->UpdateGameStatusWidget();
+
 }
 
 void UCombatManager::RemoveUnitIfDead(AUnitActor* Unit)
@@ -69,5 +74,7 @@ void UCombatManager::RemoveUnitIfDead(AUnitActor* Unit)
         GridManager->SetUnitAtCell(Pos, nullptr);
         Unit->Destroy(); // Or SetActorHidden + Disable
         UE_LOG(LogTemp, Warning, TEXT("%s has been eliminated."), *Unit->GetName());
+        if (GameMode) GameMode->UpdateGameStatusWidget();
+
     }
 }

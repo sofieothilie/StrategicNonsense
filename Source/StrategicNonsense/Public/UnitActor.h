@@ -63,6 +63,8 @@ public:
     int32 GetAttackRange() const { return AttackRange; }
     EGameUnitType GetUnitType() const { return UnitType; }
 
+    int32 GetHealth() const { return Health; }
+    int32 GetMaxHealth() const { return (UnitType == EGameUnitType::Sniper) ? 20 : 40; }
 
 
 protected:

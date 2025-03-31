@@ -3,6 +3,7 @@
 #include "GridManager.h"
 #include "Team.h"
 #include "UnitActor.h"
+#include "GameStatusWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 void ABattlePlayerController::BeginPlay()
@@ -92,6 +93,8 @@ void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
             {
                 SelectedUnit = nullptr;
 
+                GameMode->UpdateGameStatusWidget();
+
                 GameMode->CheckGameEnd();
 
                 if (GameMode->GetPlayerTeam()->HasTeamFinishedTurn())
@@ -160,8 +163,11 @@ void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
 
     // Check if player turn is over
     ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
+
     if (GameMode)
     {
+        GameMode->UpdateGameStatusWidget();
+
         UTeam* PlayerTeam = GameMode->GetPlayerTeam();
         if (PlayerTeam && PlayerTeam->HasTeamFinishedTurn())
         {
@@ -172,3 +178,53 @@ void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
 
     SelectedUnit = nullptr;
 }
+
+
+void ABattleGameMode::UpdateGameStatusWidget()
+{
+    if (!GameStatusWidget || !Team1 || !Team2)
+        return;
+
+    auto UpdateTeam = [&](UTeam* Team)
+        {
+            bool IsPlayer = Team->IsPlayerControlled();
+            AUnitActor* Sniper = nullptr;
+            AUnitActor* Brawler = nullptr;
+
+            for (AUnitActor* Unit : Team->GetControlledUnits())
+            {
+                if (!Unit) continue;
+
+                if (Unit->GetUnitType() == EGameUnitType::Sniper && !Sniper && !Unit->IsDead())
+                    Sniper = Unit;
+
+                if (Unit->GetUnitType() == EGameUnitType::Brawler && !Brawler && !Unit->IsDead())
+                    Brawler = Unit;
+            }
+
+            // Sniper
+            if (Sniper)
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Sniper, Sniper->GetHealth(), Sniper->GetMaxHealth());
+            }
+            else
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Sniper, 0, 20); // Max for sniper
+            }
+
+            // Brawler
+            if (Brawler)
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Brawler, Brawler->GetHealth(), Brawler->GetMaxHealth());
+            }
+            else
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Brawler, 0, 40); // Max for brawler
+            }
+        };
+
+    UpdateTeam(Team1);
+    UpdateTeam(Team2);
+}
+
+

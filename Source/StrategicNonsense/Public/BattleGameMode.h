@@ -14,6 +14,7 @@ class UStartMessageWidget;
 class UUnitPlacementManager;
 class UCombatManager;
 class GameOverWidget;
+class UGameStatusWidget;
 
 UENUM(BlueprintType)
 enum class EGamePhase : uint8
@@ -62,6 +63,13 @@ public:
 
     void CheckGameEnd();
 
+    UFUNCTION()
+    void SpawnGameStatusWidget();
+
+    UFUNCTION()
+    void UpdateGameStatusWidget();
+
+
 private:
     void SpawnTopDownCamera();
     void SpawnGridAndSetup();
@@ -95,5 +103,9 @@ private:
     UUserWidget* GameOverWidget;
 
     void ShowGameOverWidget(const FString& ResultText);
+
+    UPROPERTY()
+    UGameStatusWidget* GameStatusWidget;
+
 
 };
