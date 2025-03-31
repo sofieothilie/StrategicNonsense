@@ -107,9 +107,23 @@ void AGridManager::PlaceObstacles()
         TSubclassOf<AActor> ChosenObstacle = ObstacleTypes[FMath::RandRange(0, ObstacleTypes.Num() - 1)];
         FIntPoint ObstacleSize = ObstacleSizes[ChosenObstacle];
 
+        // Estimate how many cells it would occupy
+        int32 EstimatedNewCells = (ChosenObstacle == BP_Mountain)
+            ? MountainShape.Num()
+            : ObstacleSize.X * ObstacleSize.Y;
+
+        int32 MaxOccupiedCells = FMath::RoundToInt(GridSizeX * GridSizeY * (ObstaclePercentage / 100.0f));
+        if (OccupiedCells.Num() + EstimatedNewCells > MaxOccupiedCells)
+        {
+            // Replace with small tree to avoid overshooting
+            TArray<TSubclassOf<AActor>> TreeOptions = { BP_Tree1, BP_Tree2 };
+            ChosenObstacle = TreeOptions[FMath::RandRange(0, TreeOptions.Num() - 1)];
+            ObstacleSize = ObstacleSizes[ChosenObstacle];
+        }
+
         int32 OriginX = FMath::RandRange(0, GridSizeX - ObstacleSize.X);
         int32 OriginY = FMath::RandRange(0, GridSizeY - ObstacleSize.Y);
-        FIntPoint OriginCell = FIntPoint(OriginX, OriginY);
+        FIntPoint OriginCell(OriginX, OriginY);
 
         bool CanPlace = true;
         TArray<FIntPoint> CellsToOccupy;
@@ -145,10 +159,7 @@ void AGridManager::PlaceObstacles()
             }
         }
 
-        if (!CanPlace) continue;
-
-        if (WouldBlockConnectivity(CellsToOccupy)) continue;
-
+        if (!CanPlace || WouldBlockConnectivity(CellsToOccupy)) continue;
 
         FVector SpawnLocation = FVector(
             (OriginX + ObstacleSize.X / 2.0f) * CellSize,
@@ -156,13 +167,12 @@ void AGridManager::PlaceObstacles()
             GroundHeightOffset
         );
 
-        FRotator SpawnRotation = FRotator(0, 0, 90);
+        FRotator SpawnRotation(0, 0, 90);
         AActor* SpawnedObstacle = GetWorld()->SpawnActor<AActor>(ChosenObstacle, SpawnLocation, SpawnRotation);
 
         if (SpawnedObstacle)
         {
             SpawnedObstacle->SetFolderPath(FName("Obstacle"));
-
             for (const FIntPoint& Cell : CellsToOccupy)
             {
                 OccupiedCells.Add(Cell);
