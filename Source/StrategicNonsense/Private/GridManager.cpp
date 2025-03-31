@@ -15,6 +15,7 @@ void AGridManager::BeginPlay()
 {
     Super::BeginPlay();
 }
+
 void AGridManager::GenerateGrid()
 {
     if (!CellBlueprint)
@@ -71,10 +72,7 @@ void AGridManager::SetBlueprints()
     if (Tree1BP.Succeeded()) BP_Tree1 = Tree1BP.Class;
     if (Tree2BP.Succeeded()) BP_Tree2 = Tree2BP.Class;
     if (MountainBP.Succeeded()) BP_Mountain = MountainBP.Class;
-
 }
-
-
 
 void AGridManager::PlaceObstacles()
 {
@@ -86,9 +84,21 @@ void AGridManager::PlaceObstacles()
     TArray<TSubclassOf<AActor>> ObstacleTypes = { BP_Mountain, BP_Tree1, BP_Tree2 };
 
     TMap<TSubclassOf<AActor>, FIntPoint> ObstacleSizes;
-    ObstacleSizes.Add(BP_Mountain, FIntPoint(6, 9));
+    ObstacleSizes.Add(BP_Mountain, FIntPoint(8, 8));
     ObstacleSizes.Add(BP_Tree1, FIntPoint(1, 1));
     ObstacleSizes.Add(BP_Tree2, FIntPoint(1, 1));
+
+    TArray<FIntPoint> MountainShape = {
+    {1, 0}, {2, 0}, {3, 1},
+    {1, 1}, {2, 1}, {3, 1}, {4, 1}, {5, 1}, {6, 1},
+    {1, 2}, {2, 2}, {3, 2}, {4, 2}, {5, 2}, {6, 2},
+    {0, 3}, {1, 3}, {2, 3}, {3, 3}, {4, 3}, {5, 3}, {6, 3}, {7, 3},
+    {1, 4}, {2, 4}, {3, 4}, {4, 4}, {5, 4}, {6, 4}, {7, 4},
+    {1, 5}, {2, 5}, {3, 5}, {4, 5}, {5, 5}, {6, 5},
+    {2, 6}, {3, 6}, {4, 6}, {5, 6}, {6, 6},
+    {3, 7}, {4, 7}, {5, 7}
+    };
+
 
     float GroundHeightOffset = 50.0f;
 
@@ -97,47 +107,51 @@ void AGridManager::PlaceObstacles()
         TSubclassOf<AActor> ChosenObstacle = ObstacleTypes[FMath::RandRange(0, ObstacleTypes.Num() - 1)];
         FIntPoint ObstacleSize = ObstacleSizes[ChosenObstacle];
 
-        int32 X = FMath::RandRange(0, GridSizeX - ObstacleSize.X - 1);
-        int32 Y = FMath::RandRange(0, GridSizeY - ObstacleSize.Y - 1);
+        int32 OriginX = FMath::RandRange(0, GridSizeX - ObstacleSize.X);
+        int32 OriginY = FMath::RandRange(0, GridSizeY - ObstacleSize.Y);
+        FIntPoint OriginCell = FIntPoint(OriginX, OriginY);
 
         bool CanPlace = true;
         TArray<FIntPoint> CellsToOccupy;
 
-        for (int32 i = 0; i < ObstacleSize.X; ++i)
+        if (ChosenObstacle == BP_Mountain)
         {
-            for (int32 j = 0; j < ObstacleSize.Y; ++j)
+            for (const FIntPoint& Offset : MountainShape)
             {
-                FIntPoint TestCell(X + i, Y + j);
-                if (OccupiedCells.Contains(TestCell))
+                FIntPoint TestCell = OriginCell + Offset;
+                if (!IsCellValid(TestCell) || OccupiedCells.Contains(TestCell))
                 {
                     CanPlace = false;
                     break;
                 }
                 CellsToOccupy.Add(TestCell);
             }
-            if (!CanPlace) break;
+        }
+        else
+        {
+            for (int32 i = 0; i < ObstacleSize.X; ++i)
+            {
+                for (int32 j = 0; j < ObstacleSize.Y; ++j)
+                {
+                    FIntPoint TestCell(OriginX + i, OriginY + j);
+                    if (OccupiedCells.Contains(TestCell))
+                    {
+                        CanPlace = false;
+                        break;
+                    }
+                    CellsToOccupy.Add(TestCell);
+                }
+                if (!CanPlace) break;
+            }
         }
 
         if (!CanPlace) continue;
 
-        FVector SpawnLocation;
-
-        if (ObstacleSize == FIntPoint(1, 1))
-        {
-            SpawnLocation = FVector(
-                (X + 0.5f) * CellSize,
-                (Y + 0.5f) * CellSize,
-                GroundHeightOffset
-            );
-        }
-        else
-        {
-            SpawnLocation = FVector(
-                (X + ObstacleSize.X / 2.0f) * CellSize,
-                (Y + ObstacleSize.Y / 2.0f) * CellSize,
-                GroundHeightOffset
-            );
-        }
+        FVector SpawnLocation = FVector(
+            (OriginX + ObstacleSize.X / 2.0f) * CellSize,
+            (OriginY + ObstacleSize.Y / 2.0f) * CellSize,
+            GroundHeightOffset
+        );
 
         FRotator SpawnRotation = FRotator(0, 0, 90);
         AActor* SpawnedObstacle = GetWorld()->SpawnActor<AActor>(ChosenObstacle, SpawnLocation, SpawnRotation);
@@ -152,7 +166,7 @@ void AGridManager::PlaceObstacles()
             }
 
             UE_LOG(LogTemp, Warning, TEXT("Spawned obstacle at Grid (%d, %d) -> World (%f, %f)"),
-                X, Y, SpawnLocation.X, SpawnLocation.Y);
+                OriginX, OriginY, SpawnLocation.X, SpawnLocation.Y);
         }
     }
 }
