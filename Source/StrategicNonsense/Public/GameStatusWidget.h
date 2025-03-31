@@ -6,6 +6,15 @@
 #include "UnitActor.h"
 #include "GameStatusWidget.generated.h"
 
+/**
+ * @class UGameStatusWidget
+ * @brief Real-time status panel showing turn and unit stats.
+ *
+ * Shows current player turn, remaining health per unit.
+ * Helps players keep track of the game state visually.
+ */
+
+
 UCLASS()
 class STRATEGICNONSENSE_API UGameStatusWidget : public UUserWidget
 {

@@ -17,6 +17,9 @@
 #include "CombatManager.h"
 
 
+/**
+ * @brief Constructor that sets up the player controller class and loads the GameOver widget class.
+ */
 ABattleGameMode::ABattleGameMode()
 {
     PlayerControllerClass = ABattlePlayerController::StaticClass();
@@ -35,6 +38,9 @@ ABattleGameMode::ABattleGameMode()
 
 }
 
+/**
+ * @brief Called when the game begins. Spawns the camera and grid, initialises combat and unit placement managers, and starts team setup.
+ */
 void ABattleGameMode::BeginPlay()
 {
     Super::BeginPlay();
@@ -51,6 +57,9 @@ void ABattleGameMode::BeginPlay()
     UnitPlacementManager->Initialise(this, SpawnedGridManager, AllTeams, bPlayerStarts);
 }
 
+/**
+ * @brief Spawns a fixed top-down camera above the grid.
+ */
 void ABattleGameMode::SpawnTopDownCamera()
 {
     FVector Location(1000.f, 1000.f, 3000.f);
@@ -58,7 +67,11 @@ void ABattleGameMode::SpawnTopDownCamera()
     GetWorld()->SpawnActor<AGridCameraActor>(Location, Rotation);
 }
 
+/**
+ * @brief Spawns the grid manager, generates the grid, and places obstacles.
+ */
 void ABattleGameMode::SpawnGridAndSetup()
+
 {
     FVector Location(0.f, 0.f, 0.f);
     FRotator Rotation(0.f, 0.f, 0.f);
@@ -70,11 +83,17 @@ void ABattleGameMode::SpawnGridAndSetup()
     SpawnedGridManager->PlaceObstacles();
 }
 
+/**
+ * @brief Randomly determines whether the player or AI will start.
+ */
 void ABattleGameMode::DecideStartingPlayer()
 {
     bPlayerStarts = FMath::RandBool();
 }
 
+/**
+ * @brief Randomly selects team colours and initialises both teams (player and AI).
+ */
 void ABattleGameMode::SetupTeams()
 {
     TArray<FName> AvailableColours = { "Blue", "Red", "Violet", "Brown", "Green" };
@@ -100,6 +119,10 @@ void ABattleGameMode::SetupTeams()
     UE_LOG(LogTemp, Warning, TEXT("Selected Teams: %s for player and %s for AI"), *Colour1.ToString(), *Colour2.ToString());
 }
 
+/**
+ * @brief Handles when the player clicks on the grid during the placement phase.
+ * @param ClickLocation The world-space location that was clicked.
+ */
 void ABattleGameMode::OnPlayerClickedGrid(const FVector& ClickLocation)
 {
 
@@ -109,6 +132,10 @@ void ABattleGameMode::OnPlayerClickedGrid(const FVector& ClickLocation)
     }
 }
 
+/**
+ * @brief Sets the current game phase and triggers logic associated with each phase (e.g., reset units, show/hide widgets).
+ * @param NewPhase The new phase of the game (e.g., PlayerTurn, AITurn).
+ */
 void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
 {
     CurrentPhase = NewPhase;
@@ -176,20 +203,28 @@ void ABattleGameMode::SetGamePhase(EGamePhase NewPhase)
 }
 
 
-
-
-
-
+/**
+ * @brief Retrieves the team controlled by the player.
+ * @return Pointer to the player-controlled team.
+ */
 UTeam* ABattleGameMode::GetPlayerTeam() const
 { 
     return Team1->IsPlayerControlled() ? Team1 : Team2;
 }
 
+/**
+ * @brief Retrieves the team controlled by the AI.
+ * @return Pointer to the AI-controlled team.
+ */
 UTeam* ABattleGameMode::GetAITeam() const
 {
     return Team1->IsPlayerControlled() ? Team2 : Team1;
 }
 
+/**
+ * @brief Executes the AI turn logic: moves units randomly and performs attacks if in range.
+ * Ends the turn and transitions back to the player.
+ */
 void ABattleGameMode::HandleAITurn()
 {
     UTeam* AITeam = GetAITeam();
@@ -253,6 +288,9 @@ void ABattleGameMode::HandleAITurn()
 }
 
 
+/**
+ * @brief Checks whether either team has lost all units and triggers game-over logic if so.
+ */
 void ABattleGameMode::CheckGameEnd()
 {
     if (!Team1 || !Team2 || CurrentPhase == EGamePhase::GameOver)
@@ -287,6 +325,10 @@ void ABattleGameMode::CheckGameEnd()
 }
 
 
+/**
+ * @brief Displays the game over widget with the given result text (e.g., who won).
+ * @param ResultText The text to display in the widget.
+ */
 void ABattleGameMode::ShowGameOverWidget(const FString& ResultText)
 {
     if (!GameOverWidgetClass) return;
@@ -308,6 +350,9 @@ void ABattleGameMode::ShowGameOverWidget(const FString& ResultText)
     }
 }
 
+/**
+ * @brief Loads and displays the GameStatus widget, setting initial team and unit health information.
+ */
 void ABattleGameMode::SpawnGameStatusWidget()
 {
     FString WidgetPath = TEXT("/Game/Blueprints/WBP_GameStatus.WBP_GameStatus_C");
@@ -347,4 +392,55 @@ void ABattleGameMode::SpawnGameStatusWidget()
             Widget->SetUnitHealth(Team2->IsPlayerControlled(), Unit->GetUnitType(), Unit->GetHealth(), /* MaxHP */ Unit->GetHealth());
         }
     }
+}
+
+/**
+ * @brief Updates the Game Status Widget with current unit health for both teams.
+ * Displays 0 HP for units that are dead or missing.
+ */
+void ABattleGameMode::UpdateGameStatusWidget()
+{
+    if (!GameStatusWidget || !Team1 || !Team2)
+        return;
+
+    auto UpdateTeam = [&](UTeam* Team)
+        {
+            bool IsPlayer = Team->IsPlayerControlled();
+            AUnitActor* Sniper = nullptr;
+            AUnitActor* Brawler = nullptr;
+
+            for (AUnitActor* Unit : Team->GetControlledUnits())
+            {
+                if (!Unit) continue;
+
+                if (Unit->GetUnitType() == EGameUnitType::Sniper && !Sniper && !Unit->IsDead())
+                    Sniper = Unit;
+
+                if (Unit->GetUnitType() == EGameUnitType::Brawler && !Brawler && !Unit->IsDead())
+                    Brawler = Unit;
+            }
+
+            // Sniper
+            if (Sniper)
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Sniper, Sniper->GetHealth(), Sniper->GetMaxHealth());
+            }
+            else
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Sniper, 0, 20); // Max for sniper
+            }
+
+            // Brawler
+            if (Brawler)
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Brawler, Brawler->GetHealth(), Brawler->GetMaxHealth());
+            }
+            else
+            {
+                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Brawler, 0, 40); // Max for brawler
+            }
+        };
+
+    UpdateTeam(Team1);
+    UpdateTeam(Team2);
 }

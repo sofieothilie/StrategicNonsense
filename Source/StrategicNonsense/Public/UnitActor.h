@@ -4,6 +4,15 @@
 #include "GameFramework/Actor.h"
 #include "UnitActor.generated.h"
 
+/**
+ * @class AUnitActor
+ * @brief Base class for all game units (Sniper, Brawler).
+ *
+ * Stores shared properties like health, position, and team reference.
+ * Implements generic unit logic to be extended by specific unit types.
+ */
+
+
 class UPaperSpriteComponent;
 
 UENUM(BlueprintType)

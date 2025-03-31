@@ -5,17 +5,30 @@
 #include "Containers/Array.h"
 #include "DrawDebugHelpers.h"
 
+/**
+ * @brief Constructor for the grid manager.
+ *
+ * Disables ticking and attempts to load required blueprints for grid cells and obstacles.
+ */
 AGridManager::AGridManager()
 {
     PrimaryActorTick.bCanEverTick = false;
     SetBlueprints();
 }
 
+/**
+ * @brief Called when the game starts.
+ */
 void AGridManager::BeginPlay()
 {
     Super::BeginPlay();
 }
 
+/**
+ * @brief Generates a 2D grid of cell actors based on size and spacing parameters.
+ *
+ * Cells are placed in a folder named "Grid" for organisation.
+ */
 void AGridManager::GenerateGrid()
 {
     if (!CellBlueprint)
@@ -50,6 +63,9 @@ void AGridManager::GenerateGrid()
     }
 }
 
+/**
+ * @brief Loads and sets blueprint references for grid cells, trees, mountains, and the manager itself.
+ */
 void AGridManager::SetBlueprints()
 {
     static ConstructorHelpers::FClassFinder<AActor> CellBP(TEXT("/Game/Blueprints/BP_GridCell"));
@@ -74,6 +90,11 @@ void AGridManager::SetBlueprints()
     if (MountainBP.Succeeded()) BP_Mountain = MountainBP.Class;
 }
 
+/**
+ * @brief Randomly places obstacles on the grid based on a configured percentage.
+ *
+ * Ensures obstacle shapes (e.g., mountains) don’t isolate sections of the grid.
+ */
 void AGridManager::PlaceObstacles()
 {
     if (!BP_Mountain && !BP_Tree1 && !BP_Tree2) return;
@@ -184,6 +205,16 @@ void AGridManager::PlaceObstacles()
     }
 }
 
+/**
+ * @brief Attempts to place a unit at a location clicked by the player.
+ *
+ * Converts world position to grid coordinates, checks occupancy,
+ * and spawns the unit if possible.
+ *
+ * @param ClickLocation The location clicked in the world.
+ * @param UnitToPlace The class of the unit to spawn.
+ * @return true if the unit was successfully placed; false otherwise.
+ */
 bool AGridManager::TryPlaceUnitAtLocation(const FVector& ClickLocation, TSubclassOf<AUnitActor> UnitToPlace)
 {
     FIntPoint GridCoord = WorldToGrid(ClickLocation);
@@ -216,12 +247,21 @@ bool AGridManager::TryPlaceUnitAtLocation(const FVector& ClickLocation, TSubclas
     return true;
 }
 
-
+/**
+ * @brief Checks if a cell is within grid bounds.
+ * @param Cell The grid coordinate to validate.
+ * @return true if the cell is valid.
+ */
 bool AGridManager::IsCellValid(const FIntPoint& Cell) const
 {
     return Cell.X >= 0 && Cell.X < GridSizeX && Cell.Y >= 0 && Cell.Y < GridSizeY;
 }
 
+/**
+ * @brief Converts a world-space location to a grid coordinate.
+ * @param Location The world location.
+ * @return The corresponding grid cell.
+ */
 FIntPoint AGridManager::WorldToGrid(const FVector& Location) const
 {
     int32 X = FMath::FloorToInt(Location.X / CellSize);
@@ -229,6 +269,11 @@ FIntPoint AGridManager::WorldToGrid(const FVector& Location) const
     return FIntPoint(X, Y);
 }
 
+/**
+ * @brief Converts a grid coordinate to a world-space location.
+ * @param Cell The grid coordinate.
+ * @return The corresponding world location.
+ */
 FVector AGridManager::GridToWorld(const FIntPoint& Cell) const
 {
     return FVector(
@@ -238,7 +283,11 @@ FVector AGridManager::GridToWorld(const FIntPoint& Cell) const
     );
 }
 
-
+/**
+ * @brief Retrieves a random valid, unoccupied grid cell.
+ * @param OutLocation The world-space location of the chosen cell.
+ * @return true if a valid location was found; false otherwise.
+ */
 bool AGridManager::GetRandomValidPlacementLocation(FVector& OutLocation)
 {
     TArray<FIntPoint> FreeCells;
@@ -263,7 +312,11 @@ bool AGridManager::GetRandomValidPlacementLocation(FVector& OutLocation)
     return true;
 }
 
-
+/**
+ * @brief Determines if a cell is valid and not occupied.
+ * @param Cell The grid coordinate.
+ * @return true if the cell can be walked on.
+ */
 bool AGridManager::IsCellWalkable(const FIntPoint& Cell) const
 {
     if (!IsCellValid(Cell))
@@ -272,6 +325,14 @@ bool AGridManager::IsCellWalkable(const FIntPoint& Cell) const
     return !OccupiedCells.Contains(Cell);
 }
 
+/**
+ * @brief Updates occupancy tracking for a specific cell.
+ *
+ * Adds or removes the cell from the occupied list depending on whether a unit is being placed or removed.
+ *
+ * @param Cell The cell to update.
+ * @param Unit The unit being placed (or nullptr to clear the cell).
+ */
 void AGridManager::SetUnitAtCell(const FIntPoint& Cell, AUnitActor* Unit)
 {
     if (!IsCellValid(Cell))
@@ -289,6 +350,12 @@ void AGridManager::SetUnitAtCell(const FIntPoint& Cell, AUnitActor* Unit)
     }
 }
 
+/**
+ * @brief Performs a breadth-first search (BFS) to find all cells reachable from a starting cell within a range.
+ * @param StartCell The starting grid coordinate.
+ * @param MaxRange Maximum movement range.
+ * @return Set of reachable grid cells.
+ */
 TSet<FIntPoint> AGridManager::FindReachableCellsBFS(FIntPoint StartCell, int32 MaxRange) const
 {
     TSet<FIntPoint> Visited;
@@ -332,6 +399,15 @@ TSet<FIntPoint> AGridManager::FindReachableCellsBFS(FIntPoint StartCell, int32 M
     return Visited;
 }
 
+/**
+ * @brief Spawns a unit at a specific grid cell and scales it appropriately.
+ *
+ * Adds the unit to the occupied cells list and places it in the "Units" folder.
+ *
+ * @param GridCoord The target grid coordinate.
+ * @param UnitClass The class of the unit to spawn.
+ * @return Pointer to the spawned unit, or nullptr on failure.
+ */
 AUnitActor* AGridManager::SpawnAndPlaceUnit(const FIntPoint& GridCoord, TSubclassOf<AUnitActor> UnitClass)
 {
     if (!IsCellValid(GridCoord) || OccupiedCells.Contains(GridCoord))
@@ -360,6 +436,14 @@ AUnitActor* AGridManager::SpawnAndPlaceUnit(const FIntPoint& GridCoord, TSubclas
     return NewUnit;
 }
 
+/**
+ * @brief Simulates a proposed obstacle placement to check whether it would break grid connectivity.
+ *
+ * Uses a BFS to ensure that all remaining free cells are still connected.
+ *
+ * @param ProposedObstacle The list of cells the new obstacle would occupy.
+ * @return true if the placement would block connectivity; false otherwise.
+ */
 bool AGridManager::WouldBlockConnectivity(const TArray<FIntPoint>& ProposedObstacle)
 {
     TSet<FIntPoint> SimulatedOccupied = OccupiedCells;

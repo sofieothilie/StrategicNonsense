@@ -1,7 +1,15 @@
 #include "GameStatusWidget.h"
 #include "UnitActor.h"
 
-
+/**
+ * @brief Sets the displayed information for a team.
+ *
+ * Displays the team’s role (PLAYER or AI) and its assigned colour.
+ *
+ * @param bIsTeam1 Whether the team is Team 1 or not (Team 2).
+ * @param Colour The colour name assigned to the team.
+ * @param bIsAI True if the team is AI-controlled; false if it's the player.
+ */
 void UGameStatusWidget::SetTeamInfo(bool bIsTeam1, const FString& Colour, bool bIsAI)
 {
     FString Role = bIsAI ? TEXT("AI") : TEXT("PLAYER");
@@ -17,7 +25,16 @@ void UGameStatusWidget::SetTeamInfo(bool bIsTeam1, const FString& Colour, bool b
     }
 }
 
-
+/**
+ * @brief Updates the displayed health text for a specific unit.
+ *
+ * Shows the current and max HP of a Sniper or Brawler on either team.
+ *
+ * @param bIsTeam1 Whether the unit belongs to Team 1 or not (Team 2).
+ * @param UnitType The type of unit (Sniper or Brawler).
+ * @param CurrentHP The current health of the unit.
+ * @param MaxHP The maximum health of the unit.
+ */
 void UGameStatusWidget::SetUnitHealth(bool bIsTeam1, EGameUnitType UnitType, int32 CurrentHP, int32 MaxHP)
 {
     FString TypeStr = UnitType == EGameUnitType::Sniper ? TEXT("Sniper") : TEXT("Brawler");
@@ -39,6 +56,13 @@ void UGameStatusWidget::SetUnitHealth(bool bIsTeam1, EGameUnitType UnitType, int
     }
 }
 
+/**
+ * @brief Sets the turn indicator text in the UI.
+ *
+ * Typically displays "Player Turn" or "AI Turn".
+ *
+ * @param TurnDescription The description text to display.
+ */
 void UGameStatusWidget::SetTurnText(const FString& TurnDescription)
 {
     if (Turntext)

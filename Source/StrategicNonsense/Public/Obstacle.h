@@ -4,6 +4,15 @@
 #include "GameFramework/Actor.h"
 #include "Obstacle.generated.h"
 
+/**
+ * @class AObstacle
+ * @brief Represents a static obstacle on the game grid.
+ *
+ * Obstacles occupy a cell and block unit movement.
+ * Types (e.g., tree, mountain) are visually distinct but functionally identical.
+ */
+
+
 UCLASS()
 class STRATEGICNONSENSE_API AObstacle : public AActor
 {

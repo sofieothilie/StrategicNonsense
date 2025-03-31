@@ -4,6 +4,16 @@
 #include "Blueprint/UserWidget.h"
 #include "UnitSelectionWidget.generated.h"
 
+/**
+ * @class UUnitSelectionWidget
+ * @brief Lets the player choose between Sniper and Brawler during placement.
+ *
+ * Contains two buttons mapped to each unit class.
+ * Uses dynamic multicast delegates to notify listeners of the chosen unit.
+ * Displayed only during the placement phase.
+ */
+
+
 class AUnitActor;
 class UButton;
 class UTextBlock;

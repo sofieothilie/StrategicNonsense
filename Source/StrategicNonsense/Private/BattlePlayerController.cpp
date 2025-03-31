@@ -8,6 +8,10 @@
 #include "GameStatusWidget.h"
 #include "Kismet/GameplayStatics.h"
 
+/**
+ * @brief Called when the player controller begins play.
+ * Enables mouse input and sets the default cursor.
+ */
 void ABattlePlayerController::BeginPlay()
 {
     Super::BeginPlay();
@@ -19,13 +23,20 @@ void ABattlePlayerController::BeginPlay()
     DefaultMouseCursor = EMouseCursor::Default;
 }
 
-
+/**
+ * @brief Binds input actions for the player controller.
+ * Currently binds the "LeftClick" action to handle grid and unit interaction.
+ */
 void ABattlePlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
     InputComponent->BindAction("LeftClick", IE_Pressed, this, &ABattlePlayerController::HandleLeftClick);
 }
 
+/**
+ * @brief Handles a left mouse click by detecting hits on the grid or units.
+ * Routes logic based on the current game phase.
+ */
 void ABattlePlayerController::HandleLeftClick()
 {
     FHitResult Hit;
@@ -74,7 +85,10 @@ void ABattlePlayerController::HandleLeftClick()
     }
 }
 
-
+/**
+ * @brief Handles clicking on a unit. Selects or attacks depending on selection state.
+ * @param ClickedUnit The unit actor that was clicked.
+ */
 void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
 {
     if (!ClickedUnit) return;
@@ -126,7 +140,10 @@ void ABattlePlayerController::HandleUnitClicked(AUnitActor* ClickedUnit)
 
 }
 
-
+/**
+ * @brief Handles clicking on a grid cell to move a selected unit if valid.
+ * @param ClickLocation The world-space location of the clicked grid cell.
+ */
 void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
 {
     if (!SelectedUnit || !CachedGridManager)
@@ -192,53 +209,10 @@ void ABattlePlayerController::HandleGridCellClicked(FVector ClickLocation)
 }
 
 
-void ABattleGameMode::UpdateGameStatusWidget()
-{
-    if (!GameStatusWidget || !Team1 || !Team2)
-        return;
-
-    auto UpdateTeam = [&](UTeam* Team)
-        {
-            bool IsPlayer = Team->IsPlayerControlled();
-            AUnitActor* Sniper = nullptr;
-            AUnitActor* Brawler = nullptr;
-
-            for (AUnitActor* Unit : Team->GetControlledUnits())
-            {
-                if (!Unit) continue;
-
-                if (Unit->GetUnitType() == EGameUnitType::Sniper && !Sniper && !Unit->IsDead())
-                    Sniper = Unit;
-
-                if (Unit->GetUnitType() == EGameUnitType::Brawler && !Brawler && !Unit->IsDead())
-                    Brawler = Unit;
-            }
-
-            // Sniper
-            if (Sniper)
-            {
-                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Sniper, Sniper->GetHealth(), Sniper->GetMaxHealth());
-            }
-            else
-            {
-                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Sniper, 0, 20); // Max for sniper
-            }
-
-            // Brawler
-            if (Brawler)
-            {
-                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Brawler, Brawler->GetHealth(), Brawler->GetMaxHealth());
-            }
-            else
-            {
-                GameStatusWidget->SetUnitHealth(IsPlayer, EGameUnitType::Brawler, 0, 40); // Max for brawler
-            }
-        };
-
-    UpdateTeam(Team1);
-    UpdateTeam(Team2);
-}
-
+/**
+ * @brief Handles the player pressing the End Turn button.
+ * Forces all units to be marked as done and transitions to the AI turn.
+ */
 void ABattlePlayerController::HandleEndTurnPressed()
 {
     ABattleGameMode* GameMode = Cast<ABattleGameMode>(UGameplayStatics::GetGameMode(this));
@@ -264,7 +238,10 @@ void ABattlePlayerController::HandleEndTurnPressed()
     GameMode->SetGamePhase(EGamePhase::AITurn);
 }
 
-
+/**
+ * @brief Displays the End Turn widget on screen.
+ * If the widget does not exist yet, it is created from the loaded class.
+ */
 void ABattlePlayerController::ShowEndTurnWidget()
 {
     if (!EndTurnWidgetInstance && EndTurnWidgetClass)
@@ -281,6 +258,9 @@ void ABattlePlayerController::ShowEndTurnWidget()
     }
 }
 
+/**
+ * @brief Hides the End Turn widget from view.
+ */
 void ABattlePlayerController::HideEndTurnWidget()
 {
     if (EndTurnWidgetInstance)

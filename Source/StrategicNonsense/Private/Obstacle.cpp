@@ -2,6 +2,11 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
+/**
+ * @brief Constructor for the obstacle actor.
+ *
+ * Sets up the static mesh component and disables ticking.
+ */
 AObstacle::AObstacle()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -10,6 +15,11 @@ AObstacle::AObstacle()
     RootComponent = ObstacleMesh;
 }
 
+/**
+ * @brief Called when the game starts.
+ *
+ * Applies a random texture and sets the obstacle's scale based on the override.
+ */
 void AObstacle::BeginPlay()
 {
     Super::BeginPlay();
@@ -17,7 +27,12 @@ void AObstacle::BeginPlay()
     SetActorScale3D(ScaleOverride);
 }
 
-
+/**
+ * @brief Randomly selects and applies a texture from the ObstacleTextures array.
+ *
+ * Uses a dynamic material instance to assign the selected texture to the mesh.
+ * Logs warnings if the texture array is empty or contains null entries.
+ */
 void AObstacle::ApplyRandomTexture()
 {
     if (ObstacleTextures.Num() == 0)

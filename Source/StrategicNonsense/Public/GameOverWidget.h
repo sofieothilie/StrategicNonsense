@@ -5,6 +5,15 @@
 #include "Components/Button.h"
 #include "GameOverWidget.generated.h"
 
+/**
+ * @class UGameOverWidget
+ * @brief Final game state display when one player wins.
+ *
+ * Displays the match result (Victory/Defeat).
+ * Allows players to restart the match.
+ */
+
+
 
 UCLASS()
 class STRATEGICNONSENSE_API UGameOverWidget : public UUserWidget

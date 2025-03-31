@@ -6,6 +6,14 @@
 #include "UnitActor.h"
 #include "BattlePlayerController.generated.h"
 
+/**
+ * @class ABattlePlayerController
+ * @brief Manages player input and dispatches actions.
+ *
+ * Responsible for interpreting mouse clicks, selecting units, and interacting with widgets.
+ * Delegates logic to relevant systems like UnitPlacementManager and CombatManager.
+ */
+
 
 class AGridManager;
 class AUnitActor;

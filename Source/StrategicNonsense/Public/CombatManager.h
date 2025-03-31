@@ -4,6 +4,16 @@
 #include "UObject/NoExportTypes.h"
 #include "CombatManager.generated.h"
 
+/**
+ * @class ACombatManager
+ * @brief Handles combat interactions between units.
+ *
+ * Coordinates attack actions, calculates and applies damage,
+ * and processes counterattack logic when applicable.
+ * Integrates with unit state and grid visuals.
+ */
+
+
 
 class AUnitActor;
 class AGridManager;

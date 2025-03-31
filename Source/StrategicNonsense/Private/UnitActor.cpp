@@ -1,6 +1,12 @@
 #include "UnitActor.h"
 #include "PaperSpriteComponent.h"
 
+/**
+ * @brief Base constructor for all unit types (Sniper, Brawler).
+ *
+ * Sets default values for movement, attack range, damage, and health.
+ * Sprite component is expected to be assigned via Blueprint.
+ */
 AUnitActor::AUnitActor()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -14,11 +20,23 @@ AUnitActor::AUnitActor()
     Health = 0;
 }
 
+/**
+ * @brief Calculates and returns a random damage value within the unit's damage range.
+ * @return A randomly selected integer between Damage.Min and Damage.Max.
+ */
 int32 AUnitActor::GetRandomDamage() const
 {
     return FMath::RandRange(Damage.Min, Damage.Max);
 }
 
+/**
+ * @brief Applies damage to a target unit.
+ *
+ * Computes random damage and reduces the target's health.
+ * Skips damage if the target is already dead.
+ *
+ * @param Target The unit to attack.
+ */
 void AUnitActor::ApplyDamageTo(AUnitActor* Target)
 {
     if (!Target || Target->IsDead())
@@ -33,6 +51,13 @@ void AUnitActor::ApplyDamageTo(AUnitActor* Target)
         *UEnum::GetValueAsString(Target->UnitType));
 }
 
+/**
+ * @brief Reduces this unit’s health by a specified amount.
+ *
+ * Prevents health from dropping below zero.
+ *
+ * @param Amount The amount of damage to apply.
+ */
 void AUnitActor::ReceiveDamage(int32 Amount)
 {
     Health -= Amount;
@@ -46,6 +71,10 @@ void AUnitActor::ReceiveDamage(int32 Amount)
         Health);
 }
 
+/**
+ * @brief Checks if the unit is dead (i.e., health is zero or below).
+ * @return True if the unit is dead.
+ */
 bool AUnitActor::IsDead() const
 {
     return Health <= 0;

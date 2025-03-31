@@ -4,6 +4,15 @@
 #include "GameFramework/Actor.h"
 #include "GridManager.generated.h"
 
+/**
+ * @class AGridManager
+ * @brief Manages the game grid and unit occupancy.
+ *
+ * Initializes the 25x25 grid with labelled cells (A1–Y25).
+ * Tracks occupied cells, retrieves random free positions, and supports obstacle generation.
+ */
+
+
 UCLASS()
 class STRATEGICNONSENSE_API AGridManager : public AActor
 {

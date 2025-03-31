@@ -4,6 +4,15 @@
 #include "UObject/NoExportTypes.h"
 #include "Team.generated.h"
 
+/**
+ * @class ATeam
+ * @brief Represents a team containing one Sniper and one Brawler.
+ *
+ * Each team has a unique colour and contains exactly two unit references.
+ * Used for placement, gameplay logic, and UI updates.
+ */
+
+
 class AUnitActor;
 
 UCLASS(Blueprintable)

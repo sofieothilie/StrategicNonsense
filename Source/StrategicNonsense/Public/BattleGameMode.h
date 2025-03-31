@@ -5,6 +5,14 @@
 #include "CombatManager.h"
 #include "BattleGameMode.generated.h"
 
+/**
+ * @class ABattleGameMode
+ * @brief Controls the high-level game rules and match flow.
+ *
+ * Handles team creation, starting coin toss, turn progression, and game-ending conditions.
+ * Acts as the central coordinator for core game mechanics.
+ */
+
 
 class AGridManager;
 class AUnitActor;

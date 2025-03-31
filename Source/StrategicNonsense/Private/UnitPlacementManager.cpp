@@ -10,6 +10,16 @@
 #include "TimerManager.h"
 #include "UnitSelectionWidget.h"
 
+/**
+ * @brief Initialises the unit placement system with references to the game mode, grid, teams, and starter side.
+ *
+ * Displays the initial "who starts" message, then begins the alternating unit placement process.
+ *
+ * @param InGameMode Pointer to the game mode.
+ * @param InGridManager Pointer to the grid manager.
+ * @param Teams Array containing both teams.
+ * @param bPlayerStarts True if the player goes first.
+ */
 void UUnitPlacementManager::Initialise(ABattleGameMode* InGameMode, AGridManager* InGridManager, const TArray<UTeam*>& Teams, bool bPlayerStarts)
 {
     GameMode = InGameMode;
@@ -37,6 +47,9 @@ void UUnitPlacementManager::Initialise(ABattleGameMode* InGameMode, AGridManager
     StartNextPlacementStep();
 }
 
+/**
+ * @brief Displays the initial start message widget (e.g. "Player Starts") on the screen.
+ */
 void UUnitPlacementManager::ShowStartMessage()
 {
     FString WidgetPath = TEXT("/Game/Blueprints/WBP_StartMessage.WBP_StartMessage_C");
@@ -60,7 +73,13 @@ void UUnitPlacementManager::ShowStartMessage()
         }, 2.0f, false);
 }
 
-
+/**
+ * @brief Begins the next step in the unit placement process for the current team.
+ *
+ * If the player has two units left to choose from, it shows a selection widget.
+ * If it's the AI's turn, it randomly selects a unit and delays placement.
+ * When all units are placed, it transitions the game to the active phase.
+ */
 void UUnitPlacementManager::StartNextPlacementStep()
 {
     TeamPlacingNext = (CurrentPlacementTeamIndex == 0) ? AllTeams[0] : AllTeams[1];
@@ -138,7 +157,10 @@ void UUnitPlacementManager::StartNextPlacementStep()
     }
 }
 
-
+/**
+ * @brief Called when the player (or AI) has chosen which unit to place next.
+ * @param ChosenUnit The unit class that was selected for placement.
+ */
 void UUnitPlacementManager::HandleUnitChosen(TSubclassOf<AUnitActor> ChosenUnit)
 {
     UnitToPlaceNext = ChosenUnit;
@@ -153,6 +175,14 @@ void UUnitPlacementManager::HandleUnitChosen(TSubclassOf<AUnitActor> ChosenUnit)
     }
 }
 
+/**
+ * @brief Called when the player clicks on the grid during the placement phase.
+ *
+ * Places the selected unit at the clicked location if it's valid,
+ * then switches to the next team.
+ *
+ * @param ClickLocation World-space location of the clicked grid cell.
+ */
 void UUnitPlacementManager::HandlePlayerClickedGrid(const FVector& ClickLocation)
 {
     if (!UnitToPlaceNext || !GridManager) return;
@@ -169,6 +199,11 @@ void UUnitPlacementManager::HandlePlayerClickedGrid(const FVector& ClickLocation
     }
 }
 
+/**
+ * @brief Randomly places the AI's chosen unit on a valid cell.
+ *
+ * Once placed, it advances the placement phase to the next team.
+ */
 void UUnitPlacementManager::PlaceAIUnit()
 {
     if (!UnitToPlaceNext || !GridManager) return;
@@ -190,6 +225,14 @@ void UUnitPlacementManager::PlaceAIUnit()
     }
 }
 
+/**
+ * @brief Removes a unit type from the team's placement queue once placed.
+ *
+ * Ensures that each unit is only placed once per team.
+ *
+ * @param UnitClass The class of unit to remove.
+ * @param OwningTeam The team that owns the unit.
+ */
 void UUnitPlacementManager::RemoveUnitFromQueue(TSubclassOf<AUnitActor> UnitClass, UTeam* OwningTeam)
 {
 

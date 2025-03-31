@@ -4,6 +4,15 @@
 #include "UObject/NoExportTypes.h"
 #include "UnitPlacementManager.generated.h"
 
+/**
+ * @class AUnitPlacementManager
+ * @brief Manages the unit placement phase at the start of the game.
+ *
+ * Alternates between player and AI placement turns.
+ * Handles unit instantiation, placement validation, and widget triggering.
+ */
+
+
 class UTeam;
 class AGridManager;
 class ABattleGameMode;

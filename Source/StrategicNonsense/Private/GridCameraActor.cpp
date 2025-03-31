@@ -4,6 +4,12 @@
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 
+/**
+ * @brief Constructor for the grid camera actor.
+ *
+ * Sets up an orthographic camera as the root component for a top-down view.
+ * Disables ticking since the camera remains static.
+ */
 AGridCameraActor::AGridCameraActor()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -13,6 +19,12 @@ AGridCameraActor::AGridCameraActor()
     CameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
 }
 
+/**
+ * @brief Called when the game starts or the actor is spawned.
+ *
+ * Forces the player controller to use this camera as the view target,
+ * and configures the camera to frame the grid properly.
+ */
 void AGridCameraActor::BeginPlay()
 {
     Super::BeginPlay();
@@ -34,7 +46,11 @@ void AGridCameraActor::BeginPlay()
 
 }
 
-
+/**
+ * @brief Positions and configures the orthographic camera to centre and frame the game grid.
+ *
+ * Sets location, rotation, and width based on a 25x25 grid.
+ */
 void AGridCameraActor::ConfigureCamera()
 {
     const float CellSize = 100.f; // Adjust based on your actual cell size
