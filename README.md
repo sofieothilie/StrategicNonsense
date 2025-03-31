@@ -12,6 +12,7 @@ The current implementation includes:
 - Occupancy tracking via 2D matrix for valid placements
 - Start message widget logic fully in C++
 - Unit placement system with alternating turns
+- Counter attack given certain criterias
 ## Gameplay Overview
 Each team consists of:
 
@@ -30,6 +31,12 @@ Each team consists of:
    - Attack only
    - Move only
 6. The game ends when one team loses both units.
+### Counterattack Rules
+- A unit may receive **counterattack damage** immediately after attacking.
+- A **Sniper** is counterattacked if it attacks:
+  - Another **Sniper**
+  - A **Brawler** at melee range (1 cell)
+- The counterattack deals **1–3 damage** to the attacker and is applied immediately after the initial attack.
 ## AI Logic
 The AI currently:
 - Selects units randomly to place
